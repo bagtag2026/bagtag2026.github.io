@@ -2004,7 +2004,6 @@ document.getElementById('btn-save-edit-bag').addEventListener('click',async()=>{
 });
 document.getElementById('btn-add-loose-bag').addEventListener('click',()=>showAddBag());
 document.getElementById('back-folder').addEventListener('click',()=>{renderHome();go('home');});
-document.getElementById('btn-add-bag-in-folder').addEventListener('click',()=>showAddBag(curFolder));
 document.getElementById('fab-folder-bag').addEventListener('click',()=>showAddBag(curFolder));
 document.getElementById('back-add-bag').addEventListener('click',()=>{if(addBagFromFolder){renderFolderBags();go('folder-detail');}else{renderHome();go('home');}});
 document.getElementById('btn-cancel-bag').addEventListener('click',()=>{if(addBagFromFolder){renderFolderBags();go('folder-detail');}else{renderHome();go('home');}});
