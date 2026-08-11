@@ -13,13 +13,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 :root{
-  --bg:#F5F6FA;--surface:#FFF;--surface2:#EEF0F8;--border:rgba(26,36,86,0.08);--border2:rgba(26,36,86,0.14);
+  --bg:#F7F6FB;--surface:#FFF;--surface2:#EEF0F8;--border:rgba(26,36,86,0.08);--border2:rgba(26,36,86,0.14);
   --text:#1A2456;--text2:#4A5480;--text3:#8A95C0;
   --accent:#3D5AFE;--accent-lt:#EEF1FF;
   --grad:linear-gradient(135deg,#00BCD4 0%,#3D5AFE 55%,#9C27B0 100%);
   --grad-btn:linear-gradient(135deg,#00BCD4 0%,#3D5AFE 55%,#9C27B0 100%);
   --navy:#1A2456;
   --green:#1A7A4A;--green-lt:#E6F4ED;
+  --success:#0E9488;--success-lt:#E3F7F3;
   --red:#C0392B;--red-lt:#FDECEA;
   --orange:#E8620A;--orange-lt:#FFF0E8;
   --r:14px;--rsm:10px;--font:'Nunito',sans-serif;--mono:'DM Mono',monospace;
@@ -32,7 +33,7 @@
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
   --text:#E8EAFF;--text2:#9098CC;--text3:#5A6490;
   --accent:#6B7FFF;--accent-lt:#1A2040;
-  --green:#3DB870;--green-lt:#0F2A1C;--red:#E05C4B;--red-lt:#2A1210;
+  --green:#3DB870;--green-lt:#0F2A1C;--success:#2DD4C4;--success-lt:#0C2622;--red:#E05C4B;--red-lt:#2A1210;
   --orange:#F97316;--orange-lt:#2A1A0A;
   --c1-bg:#1A2040;--c2-bg:#2A1A0A;--c3-bg:#0A2A16;--c4-bg:#200A2A;--c5-bg:#2A200A;--c6-bg:#0A2224;
 }}
@@ -91,8 +92,8 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .batch-row button{flex:1;padding:8px;border:0.5px solid var(--border2);border-radius:var(--rsm);background:none;color:var(--text);font-family:var(--font);font-size:12px;}
 .batch-dl{width:100%;padding:11px;border:none;border-radius:var(--rsm);background:var(--grad-btn);color:white;font-family:var(--font);font-size:13px;font-weight:700;}
 .batch-prog{font-size:12px;color:var(--text2);text-align:center;margin-top:8px;line-height:1.6;display:none;}
-.form-group{margin-bottom:18px;}
-.form-lbl{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:7px;display:block;}
+.form-group{margin-bottom:24px;}
+.form-lbl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);font-family:var(--font);margin-bottom:8px;display:block;}
 input[type=text],textarea,select{width:100%;padding:13px 14px;border:0.5px solid var(--border2);border-radius:var(--rsm);font-size:15px;background:var(--surface);color:var(--text);font-family:var(--font);outline:none;-webkit-appearance:none;}
 input[type=text]:focus,textarea:focus,select:focus{border-color:var(--accent);}
 textarea{min-height:80px;resize:vertical;line-height:1.5;}
@@ -103,6 +104,7 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
 .btn-s{background:var(--surface);color:var(--text);border:0.5px solid var(--border2);}
 .btn-row{display:flex;gap:10px;margin-top:4px;}
 .btn-row .btn{flex:1;}
+.form-section-divider{border-top:0.5px solid var(--border);margin:22px 0 20px;padding-top:2px;}
 .color-grid{display:flex;gap:8px;flex-wrap:wrap;padding:6px;border:1px solid var(--border2);border-radius:var(--rsm);background:var(--surface);}
 .color-swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:center;}
 .color-swatch:hover{transform:scale(1.15);}
@@ -137,12 +139,12 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
 .media-area{border:1.5px dashed var(--border2);border-radius:var(--rsm);padding:22px 20px;text-align:center;color:var(--text2);font-size:14px;cursor:pointer;}
 .media-icon{font-size:30px;margin-bottom:8px;}
 .media-sub{font-size:12px;color:var(--text3);margin-top:4px;}
-.qr-wrap{display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:12px;}
+.qr-wrap{display:flex;flex-direction:column;align-items:center;padding:18px 0;gap:16px;}
 .qr-box{background:white;padding:16px;border-radius:var(--r);border:0.5px solid var(--border);min-height:252px;min-width:252px;display:flex;align-items:center;justify-content:center;}
 .qr-name{font-size:14px;font-weight:500;color:var(--text2);font-family:var(--mono);text-align:center;}
 .qr-folder{font-size:11px;color:var(--text3);font-family:var(--mono);text-align:center;margin-top:2px;}
-.qr-hint{font-size:12px;color:var(--text3);text-align:center;max-width:240px;line-height:1.5;}
-.qr-acts{display:flex;gap:8px;width:100%;flex-wrap:wrap;}
+.qr-hint{font-size:12px;color:var(--text3);text-align:center;max-width:240px;line-height:1.5;margin-bottom:4px;}
+.qr-acts{display:flex;gap:8px;width:100%;flex-wrap:wrap;margin-top:6px;}
 .qr-acts button{flex:1;padding:12px;border-radius:var(--rsm);font-family:var(--font);font-size:13px;font-weight:500;border:0.5px solid var(--border2);background:var(--surface);color:var(--text);min-width:80px;}
 .qr-acts button.pa{background:var(--accent);color:white;border-color:var(--accent);}
 .scanner-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;}
@@ -252,9 +254,9 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
 .lang-option.sel .lang-check{display:block;}
 
 /* ── BOTTOM NAV ── */
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:0.5px solid var(--border);display:none;z-index:600;padding:8px 0 max(12px,env(safe-area-inset-bottom));}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:0.5px solid var(--border);display:none;z-index:600;padding:10px 0 max(14px,env(safe-area-inset-bottom));}
 .bottom-nav.visible{display:flex;}
-.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;font-family:var(--font);font-size:10px;font-weight:500;color:var(--text3);padding:4px 0;cursor:pointer;}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;font-family:var(--font);font-size:10px;font-weight:500;color:var(--text3);padding:5px 0;cursor:pointer;}
 .bnav-item svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 .bnav-item.active{background:var(--grad-btn);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 
@@ -330,7 +332,7 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
 
 /* ── ACCOUNT NAME INPUT ── */
 .acct-name-row{margin-bottom:14px;}
-.acct-name-lbl{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:6px;display:block;}
+.acct-name-lbl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);font-family:var(--font);margin-bottom:6px;display:block;}
 .acct-name-inp-row{display:flex;gap:8px;}
 .acct-name-inp{flex:1;padding:10px 12px;border:0.5px solid var(--border2);border-radius:var(--rsm);font-size:14px;background:var(--surface);color:var(--text);font-family:var(--font);outline:none;}
 .acct-name-inp:focus{border-color:var(--accent);}
@@ -810,6 +812,7 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
       <label class="form-lbl">Notes (optional)</label>
       <textarea id="inp-item-note" placeholder="Any details or location hints…"></textarea>
     </div>
+    <div class="form-section-divider"></div>
     <div class="form-group">
       <label class="form-lbl">Status flag</label>
       <div class="flag-row">
@@ -849,6 +852,7 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
       <label class="form-lbl">Notes (optional)</label>
       <textarea id="edit-item-note" placeholder="Any details or location hints…"></textarea>
     </div>
+    <div class="form-section-divider"></div>
     <div class="form-group">
       <label class="form-lbl">Status flag</label>
       <div class="flag-row">
@@ -1107,15 +1111,15 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
   </button>
   <button class="bnav-item" id="bnav-sharing" onclick="switchTab('sharing')">
     <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    Sharing<span class="pro-badge" style="font-size:7px;padding:1px 4px;margin-left:2px;">PRO</span>
+    Sharing<span class="pro-badge" style="font-size:7px;padding:1px 5px;margin-left:4px;">PRO</span>
   </button>
   <button class="bnav-item" id="bnav-barcode" onclick="switchTab('barcode')">
     <svg viewBox="0 0 24 24"><path d="M3 5v4M3 15v4M7 5v2M7 17v2M11 5v14M15 5v2M15 17v2M19 5v4M19 15v4M21 5h-2M21 19h-2M5 5H3M5 19H3"/></svg>
-    Scan<span class="pro-badge" style="font-size:7px;padding:1px 4px;margin-left:2px;">PRO</span>
+    Scan<span class="pro-badge" style="font-size:7px;padding:1px 5px;margin-left:4px;">PRO</span>
   </button>
   <button class="bnav-item" id="bnav-reminders" onclick="switchTab('reminders')">
     <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    Reminders<span class="pro-badge" style="font-size:7px;padding:1px 4px;margin-left:2px;">PRO</span>
+    Reminders<span class="pro-badge" style="font-size:7px;padding:1px 5px;margin-left:4px;">PRO</span>
   </button>
   <button class="bnav-item" id="bnav-summary" onclick="switchTab('summary')">
     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
