@@ -1681,15 +1681,43 @@ async function loadMediaUrls(){
 // ── SUPABASE WRITE HELPERS ──
 async function cloudSaveFolder(f){
   if(!currentUser) return;
-  try{if(f.cloudId){await sb.from('folders').update({name:f.name,icon:f.emoji,colour:f.color}).eq('id',f.cloudId);}else{const{data,error}=await sb.from('folders').insert({name:f.name,icon:f.emoji,colour:f.color,user_id:currentUser.id}).select('id').single();if(!error){f.cloudId=data.id;save();}}}catch(e){console.error(e);}
+  try{
+    if(f.cloudId){
+      const{error}=await sb.from('folders').update({name:f.name,icon:f.emoji,colour:f.color}).eq('id',f.cloudId);
+      if(error){console.error(error);toast('⚠️ Cloud save failed: '+error.message);}
+    }else{
+      const{data,error}=await sb.from('folders').insert({name:f.name,icon:f.emoji,colour:f.color,user_id:currentUser.id}).select('id').single();
+      if(!error){f.cloudId=data.id;save();}else{console.error(error);toast('⚠️ Cloud save failed: '+error.message);}
+    }
+  }catch(e){console.error(e);toast('⚠️ Cloud save failed: '+e.message);}
 }
 async function cloudSaveBag(b,folderId){
   if(!currentUser) return;
-  try{const folder=folderId?db.folders.find(f=>f.id===folderId):null;const cloudFolderId=folder?folder.cloudId||null:null;if(b.cloudId){await sb.from('bags').update({name:b.name,icon:b.emoji,folder_id:cloudFolderId,location:b.location||null}).eq('id',b.cloudId);}else{const{data,error}=await sb.from('bags').insert({name:b.name,icon:b.emoji,folder_id:cloudFolderId,qr_id:b.id,location:b.location||null,user_id:currentUser.id}).select('id').single();if(!error){b.cloudId=data.id;save();}}}catch(e){console.error(e);}
+  try{
+    const folder=folderId?db.folders.find(f=>f.id===folderId):null;const cloudFolderId=folder?folder.cloudId||null:null;
+    if(b.cloudId){
+      const{error}=await sb.from('bags').update({name:b.name,icon:b.emoji,folder_id:cloudFolderId,location:b.location||null}).eq('id',b.cloudId);
+      if(error){console.error(error);toast('⚠️ Cloud save failed: '+error.message);}
+    }else{
+      const{data,error}=await sb.from('bags').insert({name:b.name,icon:b.emoji,folder_id:cloudFolderId,qr_id:b.id,location:b.location||null,user_id:currentUser.id}).select('id').single();
+      if(!error){b.cloudId=data.id;save();}else{console.error(error);toast('⚠️ Cloud save failed: '+error.message);}
+    }
+  }catch(e){console.error(e);toast('⚠️ Cloud save failed: '+e.message);}
 }
 async function cloudSaveItem(item,bagId){
   if(!currentUser) return;
-  try{const bag=db.bags.find(b=>b.id===bagId);if(bag&&!bag.cloudId){for(let i=0;i<10;i++){await new Promise(r=>setTimeout(r,500));if(bag.cloudId)break;}}const cloudBagId=bag?bag.cloudId||null:null;if(!cloudBagId) return;if(item.cloudId){await sb.from('items').update({name:item.name,notes:item.note,flag:item.flag||null,media_path:item.mediaPath||null,media_type:item.mediaType||null}).eq('id',item.cloudId);}else{const{data,error}=await sb.from('items').insert({name:item.name,notes:item.note,flag:item.flag||null,bag_id:cloudBagId,media_path:item.mediaPath||null,media_type:item.mediaType||null,user_id:currentUser.id}).select('id').single();if(!error){item.cloudId=data.id;save();}}}catch(e){console.error(e);}
+  try{
+    const bag=db.bags.find(b=>b.id===bagId);if(bag&&!bag.cloudId){for(let i=0;i<10;i++){await new Promise(r=>setTimeout(r,500));if(bag.cloudId)break;}}
+    const cloudBagId=bag?bag.cloudId||null:null;
+    if(!cloudBagId){toast('⚠️ Cloud save failed: bag not synced yet');return;}
+    if(item.cloudId){
+      const{error}=await sb.from('items').update({name:item.name,notes:item.note,flag:item.flag||null,media_path:item.mediaPath||null,media_type:item.mediaType||null}).eq('id',item.cloudId);
+      if(error){console.error(error);toast('⚠️ Cloud save failed: '+error.message);}
+    }else{
+      const{data,error}=await sb.from('items').insert({name:item.name,notes:item.note,flag:item.flag||null,bag_id:cloudBagId,media_path:item.mediaPath||null,media_type:item.mediaType||null,user_id:currentUser.id}).select('id').single();
+      if(!error){item.cloudId=data.id;save();}else{console.error(error);toast('⚠️ Cloud save failed: '+error.message);}
+    }
+  }catch(e){console.error(e);toast('⚠️ Cloud save failed: '+e.message);}
 }
 async function cloudDeleteFolder(f){if(currentUser&&f&&f.cloudId) await sb.from('folders').delete().eq('id',f.cloudId);}
 async function cloudDeleteBag(b){if(currentUser&&b&&b.cloudId) await sb.from('bags').delete().eq('id',b.cloudId);}
@@ -2339,7 +2367,10 @@ async function fetchProStatus(){
     if(!error&&data){userPlan=data;localStorage.setItem('bagtag_plan',data.plan);updatePlanUI();}
   }catch(e){const cached=localStorage.getItem('bagtag_plan');if(cached)userPlan.plan=cached;}
 }
-function isPro(){const plan=userPlan.plan||localStorage.getItem('bagtag_plan')||'free';return userPlan.is_pro===true||plan==='pro'||plan==='trial';}
+function isPro(){
+  if(currentUser && currentUser.email && currentUser.email.toLowerCase()===ADMIN_EMAIL.toLowerCase()) return true;
+  const plan=userPlan.plan||localStorage.getItem('bagtag_plan')||'free';return userPlan.is_pro===true||plan==='pro'||plan==='trial';
+}
 async function activatePro(){
   if(currentUser){await sb.from('user_profiles').update({is_pro:true,pro_since:new Date().toISOString()}).eq('id',currentUser.id);await fetchProStatus();}
   localStorage.setItem('bagtag_plan','pro'); userPlan.plan='pro'; userPlan.is_pro=true;
