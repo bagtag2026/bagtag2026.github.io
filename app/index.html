@@ -2521,7 +2521,7 @@ async function renderSharingScreen(){
     let code=prof&&prof.team_code;
     if(!code){code=genTeamCode();await sb.from('user_profiles').update({team_code:code}).eq('id',currentUser.id);}
     document.getElementById('sharing-team-code').textContent=code;
-    document.getElementById('btn-share-code-whatsapp').href=`https://wa.me/?text=${encodeURIComponent('Join our BagTag team! Open the app, go to Sharing → Join a team, and enter this code: '+code)}`;
+    document.getElementById('btn-share-code-whatsapp').href=`https://wa.me/?text=${encodeURIComponent('Join our BagTag team! Open this link: https://bagtag2026.github.io/app/ — go to Sharing → "Have an invite code?" and enter: '+code)}`;
   }catch(e){document.getElementById('sharing-team-code').textContent='—';}
   // Render current team members
   try{
