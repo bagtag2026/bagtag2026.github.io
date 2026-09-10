@@ -2519,7 +2519,11 @@ async function renderSharingScreen(){
   try{
     const{data:prof}=await sb.from('user_profiles').select('team_code').eq('id',currentUser.id).maybeSingle();
     let code=prof&&prof.team_code;
-    if(!code){code=genTeamCode();await sb.from('user_profiles').update({team_code:code}).eq('id',currentUser.id);}
+    if(!code){
+      code=genTeamCode();
+      const{error:upsertErr}=await sb.from('user_profiles').upsert({id:currentUser.id,team_code:code},{onConflict:'id'});
+      if(upsertErr){console.warn('Could not save invite code',upsertErr);document.getElementById('sharing-team-code').textContent='Error — retry';return;}
+    }
     document.getElementById('sharing-team-code').textContent=code;
     document.getElementById('btn-share-code-whatsapp').href=`https://wa.me/?text=${encodeURIComponent('Join our BagTag team! Open this link: https://bagtag2026.github.io/app/ — go to Sharing → "Have an invite code?" and enter: '+code)}`;
   }catch(e){document.getElementById('sharing-team-code').textContent='—';}
