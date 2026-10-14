@@ -421,6 +421,16 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
 .reminder-date.soon{color:#B45309;}
 .reminder-date.ok{color:#1A7A4A;}
 .reminder-type{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.atype-opts{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+.atype-card{display:flex;align-items:center;gap:14px;text-align:left;padding:14px 16px;background:var(--surface);border:2px solid var(--border2);border-radius:16px;font-family:var(--font);color:var(--text);}
+.atype-card b{display:block;font-size:15px;}
+.atype-card small{display:block;font-size:12px;color:var(--text3);margin-top:2px;}
+.atype-card.sel{border-color:var(--accent);}
+.atype-ico{font-size:28px;}
+.atype-seg{display:flex;gap:8px;margin-top:6px;}
+.atype-seg button{flex:1;padding:9px;border:2px solid var(--border2);background:var(--surface);border-radius:12px;font-family:var(--font);font-size:13px;font-weight:700;color:var(--text2);}
+.atype-seg button.sel{border-color:var(--accent);color:var(--text);}
+.plan-chip.deactivated{background:#FFEBEE;color:#C62828;}
 </style>
 </head>
 <body>
@@ -497,6 +507,17 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
 </div>
 
 <!-- ACCOUNT SHEET -->
+<div class="onboard-overlay" id="atype-overlay" style="display:none;">
+  <div class="onboard-sheet">
+    <div class="onboard-title">How will you use BagTag?</div>
+    <div class="onboard-sub">This sets up the right wording for you. You can change it any time in Account.</div>
+    <div class="atype-opts">
+      <button class="atype-card sel" data-type="business"><span class="atype-ico">🏢</span><span><b>Small businesses</b><small>Shops, schools, clinics, offices and stores</small></span></button>
+      <button class="atype-card" data-type="household"><span class="atype-ico">🏠</span><span><b>Households</b><small>Home, family and personal storage</small></span></button>
+    </div>
+    <button class="btn-p" id="btn-atype-save" style="width:100%;padding:14px;border:none;border-radius:99px;font-family:var(--font);font-size:15px;">Continue</button>
+  </div>
+</div>
 <div class="acct-sheet" id="acct-sheet">
   <div style="font-size:15px;font-weight:700;margin-bottom:4px;font-family:'Nunito',sans-serif;">Account</div>
   <div class="acct-email" id="acct-email-label"></div>
@@ -511,6 +532,10 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
     <div id="acct-plan-badge" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:12px;font-weight:800;font-family:'Nunito',sans-serif;"></div>
     <div id="acct-plan-sub" style="font-size:11px;color:var(--text3);margin-top:5px;"></div>
     <button id="btn-upgrade-from-acct" style="display:none;margin-top:10px;width:100%;padding:11px;background:linear-gradient(135deg,#00BCD4,#3D5AFE,#9C27B0);color:white;border:none;border-radius:99px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;">✨ Upgrade to BagTag Pro</button>
+  </div>
+  <div class="acct-name-row">
+    <span class="acct-name-lbl">Account type</span>
+    <div class="atype-seg" id="acct-type-seg"><button data-type="business">Small businesses</button><button data-type="household">Households</button></div>
   </div>
   <div style="margin:0 0 10px;">
     <button class="tnc-link" id="btn-view-tnc">📋 View Terms &amp; Conditions</button>
@@ -1663,7 +1688,7 @@ async function onSignedIn(){
   await fetchTeamContext();
   await syncFromCloud();
   await fetchProStatus();
-  await fetchDisplayName();
+  await fetchDisplayName();await fetchAccountType();
   await loadQuickNotes();
   refreshProScreens();
   checkTnCAfterLogin();
@@ -2616,31 +2641,32 @@ document.getElementById('btn-save-reminder').addEventListener('click',()=>{
 document.getElementById('back-admin').addEventListener('click',()=>{renderHome();go('home');});
 document.getElementById('admin-search-inp').addEventListener('input',e=>filterAdminUsers(e.target.value));
 
+async function adminCall(body){
+  const{data,error}=await sb.functions.invoke('admin-user-action',{body});
+  if(error){
+    let msg=error.message||'Request failed';
+    try{const j=await error.context.json();if(j&&j.error)msg=j.error;}catch(e){}
+    throw new Error(msg);
+  }
+  if(data&&data.error) throw new Error(data.error);
+  return data;
+}
 async function loadAdminData(){
-  if(!currentUser||currentUser.email.toLowerCase()!==ADMIN_EMAIL.toLowerCase()){toast('Access denied');return;}
   const listEl=document.getElementById('admin-user-list');
   const statsEl=document.getElementById('admin-stats');
   listEl.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">Loading…</div>';
   try{
-    // Load profiles
-    const{data:profiles,error}=await sb.from('user_profiles').select('*').order('created_at',{ascending:false});
-    if(error)throw error;
-    // Load counts
-    const{data:bags}=await sb.from('bags').select('user_id');
-    const{data:items}=await sb.from('items').select('user_id');
-    // Stats
-    const totalUsers=profiles?profiles.length:0;
-    const proUsers=profiles?profiles.filter(p=>p.is_pro).length:0;
-    const totalBagsCount=bags?bags.length:0;
-    const totalItemsCount=items?items.length:0;
+    const res=await adminCall({action:'list_users'});
+    const t=res.totals||{};
     statsEl.innerHTML=`
-      <div class="admin-stat"><div class="admin-stat-num">${totalUsers}</div><div class="admin-stat-lbl">Total users</div></div>
-      <div class="admin-stat"><div class="admin-stat-num">${proUsers}</div><div class="admin-stat-lbl">Pro users</div></div>
-      <div class="admin-stat"><div class="admin-stat-num">${totalBagsCount}</div><div class="admin-stat-lbl">Total bags</div></div>
-      <div class="admin-stat"><div class="admin-stat-num">${totalItemsCount}</div><div class="admin-stat-lbl">Total items</div></div>`;
-    window._adminProfiles=profiles||[];
-    renderAdminUsers(profiles||[]);
-  }catch(e){listEl.innerHTML=`<div style="text-align:center;padding:30px;color:var(--red);font-size:13px;">Error loading data.<br>Make sure the user_profiles table exists.<br><small>${e.message}</small></div>`;}
+      <div class="admin-stat"><div class="admin-stat-num">${t.users||0}</div><div class="admin-stat-lbl">Total users</div></div>
+      <div class="admin-stat"><div class="admin-stat-num">${t.pro_users||0}</div><div class="admin-stat-lbl">Pro users</div></div>
+      <div class="admin-stat"><div class="admin-stat-num">${t.bags||0}</div><div class="admin-stat-lbl">Total bags</div></div>
+      <div class="admin-stat"><div class="admin-stat-num">${t.items||0}</div><div class="admin-stat-lbl">Total items</div></div>`;
+    window._adminProfiles=res.users||[];
+    const q=(document.getElementById('admin-search-inp')||{}).value||'';
+    filterAdminUsers(q);
+  }catch(e){listEl.innerHTML=`<div style="text-align:center;padding:30px;color:var(--red);font-size:13px;">Could not load users.<br><small>${esc(e.message)}</small></div>`;}
 }
 function filterAdminUsers(q){
   if(!window._adminProfiles) return;
@@ -2651,8 +2677,10 @@ function renderAdminUsers(profiles){
   const listEl=document.getElementById('admin-user-list');
   if(!profiles.length){listEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">No users found.</div>';return;}
   listEl.innerHTML=profiles.map(p=>{
-    const plan=p.is_pro?'pro':(p.plan||'trial');
+    const off=p.is_active===false;
+    const plan=off?'deactivated':(p.is_pro?'pro':(p.plan||'trial'));
     const created=p.created_at?new Date(p.created_at).toLocaleDateString('en-IN'):'—';
+    const mine=currentUser&&p.id===currentUser.id;
     return`<div class="admin-user-card">
       <div style="display:flex;align-items:center;gap:8px;">
         <div class="admin-user-email">${esc(p.email||p.id||'Unknown')}</div>
@@ -2664,21 +2692,66 @@ function renderAdminUsers(profiles){
         <button class="admin-action-btn activate" onclick="adminActivatePro('${p.id}')">✨ Activate Pro</button>
         <button class="admin-action-btn revoke" onclick="adminRevokeAccess('${p.id}')">🔒 Restrict</button>
       </div>
+      ${mine?'':`<div class="admin-user-actions" style="margin-top:8px;">
+        ${off?`<button class="admin-action-btn extend" onclick="adminReactivate('${p.id}')">✅ Reactivate</button>`:`<button class="admin-action-btn revoke" onclick="adminDeactivate('${p.id}')">⛔ Deactivate</button>`}
+        <button class="admin-action-btn revoke" onclick="adminDelete('${p.id}')">🗑 Delete</button>
+      </div>`}
     </div>`;
   }).join('');
 }
-window.adminExtendTrial=async function(userId){
-  if(!confirm('Extend this user\'s trial by 7 days?')) return;
-  try{await sb.from('user_profiles').update({trial_extended:true,trial_extension_days:7}).eq('id',userId);toast('✅ Trial extended by 7 days');await loadAdminData();}catch(e){toast('Error: '+e.message);}
+async function adminDo(body,okMsg){
+  try{await adminCall(body);toast(okMsg);await loadAdminData();}catch(e){toast('Error: '+e.message);}
+}
+window.adminExtendTrial=function(id){if(confirm('Extend this user\'s trial by 7 days?')) adminDo({action:'extend_trial',target_user_id:id},'✅ Trial extended by 7 days');};
+window.adminActivatePro=function(id){if(confirm('Activate Pro for this user?')) adminDo({action:'activate_pro',target_user_id:id},'✅ Pro activated');};
+window.adminRevokeAccess=function(id){if(confirm('Restrict this account? The user will lose Pro access.')) adminDo({action:'restrict',target_user_id:id},'🔒 Account restricted');};
+window.adminDeactivate=function(id){
+  if(!confirm('Deactivate this account? The user will be blocked from signing in.')) return;
+  const reason=prompt('Reason (optional)','')||undefined;
+  adminDo({action:'deactivate',target_user_id:id,reason},'⛔ Account deactivated');
 };
-window.adminActivatePro=async function(userId){
-  if(!confirm('Activate Pro for this user?')) return;
-  try{await sb.from('user_profiles').update({is_pro:true,plan:'pro',pro_since:new Date().toISOString()}).eq('id',userId);toast('✅ Pro activated');await loadAdminData();}catch(e){toast('Error: '+e.message);}
+window.adminReactivate=function(id){if(confirm('Reactivate this account?')) adminDo({action:'reactivate',target_user_id:id},'✅ Account reactivated');};
+window.adminDelete=function(id){
+  const u=(window._adminProfiles||[]).find(p=>p.id===id);
+  if(!confirm('Permanently delete '+((u&&u.email)||'this user')+' and all their data? This cannot be undone.')) return;
+  adminDo({action:'delete',target_user_id:id},'🗑 User deleted');
 };
-window.adminRevokeAccess=async function(userId){
-  if(!confirm('Restrict this account? The user will lose access.')) return;
-  try{await sb.from('user_profiles').update({is_pro:false,plan:'restricted'}).eq('id',userId);toast('🔒 Account restricted');await loadAdminData();}catch(e){toast('Error: '+e.message);}
-};
+
+// ── ACCOUNT TYPE ──
+var userAccountType=null, _atypePick='business';
+function renderAccountType(){
+  document.querySelectorAll('#acct-type-seg button').forEach(b=>b.classList.toggle('sel',b.dataset.type===userAccountType));
+}
+async function fetchAccountType(){
+  if(!currentUser) return;
+  try{
+    const{data,error}=await sb.from('user_profiles').select('account_type').eq('id',currentUser.id).maybeSingle();
+    if(error) return;
+    userAccountType=(data&&data.account_type)||null;
+    renderAccountType();
+    if(!userAccountType) openAccountTypePicker();
+  }catch(e){}
+}
+function openAccountTypePicker(){
+  _atypePick='business';
+  document.querySelectorAll('#atype-overlay .atype-card').forEach(c=>c.classList.toggle('sel',c.dataset.type===_atypePick));
+  document.getElementById('atype-overlay').style.display='flex';
+}
+async function saveAccountType(type){
+  try{
+    const{error}=await sb.from('user_profiles').upsert({id:currentUser.id,account_type:type},{onConflict:'id'});
+    if(error) throw error;
+    userAccountType=type; renderAccountType();
+    document.getElementById('atype-overlay').style.display='none';
+    toast('✅ Account type saved');
+  }catch(e){toast('Could not save. Check your connection and try again.');}
+}
+document.querySelectorAll('#atype-overlay .atype-card').forEach(c=>c.addEventListener('click',()=>{
+  _atypePick=c.dataset.type;
+  document.querySelectorAll('#atype-overlay .atype-card').forEach(x=>x.classList.toggle('sel',x===c));
+}));
+document.getElementById('btn-atype-save').addEventListener('click',()=>saveAccountType(_atypePick));
+document.querySelectorAll('#acct-type-seg button').forEach(b=>b.addEventListener('click',()=>saveAccountType(b.dataset.type)));
 
 // ── URL HANDLER + INIT ──
 (async function(){
@@ -2692,7 +2765,7 @@ window.adminRevokeAccess=async function(userId){
     await fetchTeamContext();
     await syncFromCloud();
     await fetchProStatus();
-    await fetchDisplayName();
+    await fetchDisplayName();await fetchAccountType();
     await loadQuickNotes();
     refreshProScreens();
     updateTrialBanner();
