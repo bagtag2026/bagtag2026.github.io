@@ -431,6 +431,28 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
 .atype-seg button{flex:1;padding:9px;border:2px solid var(--border2);background:var(--surface);border-radius:12px;font-family:var(--font);font-size:13px;font-weight:700;color:var(--text2);}
 .atype-seg button.sel{border-color:var(--accent);color:var(--text);}
 .plan-chip.deactivated{background:#FFEBEE;color:#C62828;}
+.form-group input[type=number]{width:100%;padding:12px 14px;border:1.5px solid var(--border2);border-radius:var(--rsm);background:var(--surface);color:var(--text);font-family:var(--font);font-size:15px;}
+.mv-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:3500;display:none;align-items:flex-end;justify-content:center;}
+.mv-ov.open{display:flex;}
+.mv-sheet{width:100%;max-width:480px;max-height:80vh;overflow:auto;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 20px 30px;}
+.mv-title{font-size:17px;font-weight:800;margin-bottom:12px;color:var(--text);}
+.mv-sub{font-size:13px;color:var(--text3);}
+.mv-opt{display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;background:var(--bg,#F5F6FA);border:1px solid var(--border2);border-radius:12px;font-family:var(--font);font-size:14px;font-weight:700;color:var(--text);}
+.mv-opt small{display:block;color:var(--text3);font-size:12px;font-weight:500;margin-top:2px;}
+.mv-row{display:flex;gap:10px;margin-top:14px;}
+.mv-row button{flex:1;padding:13px;border-radius:99px;border:none;font-family:var(--font);font-size:14px;font-weight:700;}
+.mv-no{background:var(--border2);color:var(--text);}
+.mv-yes{background:var(--grad-btn);color:#fff;}
+.mv-rec{padding:10px 0;border-bottom:1px solid var(--border2);display:flex;gap:10px;align-items:center;}
+.mv-rec>div{flex:1;font-size:14px;color:var(--text);}
+.mv-rec small{display:block;color:var(--text3);font-size:12px;margin-top:2px;}
+.mv-rec button{padding:7px 14px;border-radius:99px;border:1.5px solid var(--accent);background:none;color:var(--accent);font-family:var(--font);font-weight:700;font-size:13px;}
+#drop-panel{position:fixed;right:12px;top:80px;width:240px;max-height:70vh;overflow:auto;z-index:3400;display:none;background:var(--surface);border:2px dashed var(--accent);border-radius:16px;padding:10px;box-shadow:0 8px 30px rgba(0,0,0,.2);}
+.drop-t{padding:10px;margin-bottom:6px;border-radius:10px;background:var(--bg,#F5F6FA);font-size:13px;font-weight:700;color:var(--text);}
+.drop-t small{display:block;color:var(--text3);font-weight:500;}
+.drop-t.over{outline:2px solid var(--accent);}
+#undo-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h,70px) + 16px);display:none;align-items:center;gap:16px;background:#263238;color:#fff;padding:12px 18px;border-radius:99px;font-size:14px;z-index:3600;max-width:92vw;}
+#undo-bar button{background:none;border:none;color:#80DEEA;font-weight:800;font-family:var(--font);font-size:14px;}
 </style>
 </head>
 <body>
@@ -518,6 +540,9 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
     <button class="btn-p" id="btn-atype-save" style="width:100%;padding:14px;border:none;border-radius:99px;font-family:var(--font);font-size:15px;">Continue</button>
   </div>
 </div>
+<div class="mv-ov" id="mv-ov"><div class="mv-sheet" id="mv-sheet"></div></div>
+<div id="drop-panel"></div>
+<div id="undo-bar"></div>
 <div class="acct-sheet" id="acct-sheet">
   <div style="font-size:15px;font-weight:700;margin-bottom:4px;font-family:'Nunito',sans-serif;">Account</div>
   <div class="acct-email" id="acct-email-label"></div>
@@ -838,6 +863,7 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
       <label class="form-lbl">Item name</label>
       <input type="text" id="inp-item-name" placeholder="e.g. Scissors, Bandages, Crayons…"/>
     </div>
+    <div class="form-group"><label class="form-lbl">Quantity</label><input type="number" id="inp-item-qty" min="1" value="1" inputmode="numeric"/></div>
     <div class="form-group">
       <label class="form-lbl">Notes (optional)</label>
       <textarea id="inp-item-note" placeholder="Any details or location hints…"></textarea>
@@ -878,6 +904,7 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
       <label class="form-lbl">Item name</label>
       <input type="text" id="edit-item-name" placeholder="e.g. Scissors, Bandages…"/>
     </div>
+    <div class="form-group"><label class="form-lbl">Quantity</label><input type="number" id="edit-item-qty" min="1" value="1" inputmode="numeric"/></div>
     <div class="form-group">
       <label class="form-lbl">Notes (optional)</label>
       <textarea id="edit-item-note" placeholder="Any details or location hints…"></textarea>
@@ -956,6 +983,7 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
     <h2>📋 Summary</h2>
     <p id="summary-meta">Full inventory</p>
   </div>
+  <div class="summary-dl-wrap" style="margin-bottom:10px;"><button class="summary-dl-btn" onclick="openRecentMoves()" style="background:var(--surface);color:var(--text);border:2px solid var(--border2);box-shadow:none;">⇄ Recent moves</button></div>
   <div class="summary-dl-wrap">
     <button class="summary-dl-btn" id="btn-dl-summary">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1729,7 +1757,7 @@ async function syncFromCloud(){
   try{
     const[fr,br,ir]=await Promise.all([sb.from('folders').select('*').order('created_at'),sb.from('bags').select('*').order('created_at'),sb.from('items').select('*').order('created_at')]);
     const folders=(fr.data||[]).map(f=>({id:f.id,cloudId:f.id,name:f.name,emoji:f.icon||'📁',color:f.colour||1,bags:(br.data||[]).filter(b=>b.folder_id===f.id).map(b=>b.qr_id||b.id)}));
-    const bags=(br.data||[]).map(b=>({id:b.qr_id||b.id,cloudId:b.id,name:b.name,emoji:b.icon||'🧳',location:b.location||'',items:(ir.data||[]).filter(i=>i.bag_id===b.id).map(i=>({id:i.id,cloudId:i.id,name:i.name,note:i.notes||'',flag:i.flag||null,mediaPath:i.media_path||null,mediaType:i.media_type||null,mediaData:null,mediaUrl:null}))}));
+    const bags=(br.data||[]).map(b=>({id:b.qr_id||b.id,cloudId:b.id,name:b.name,emoji:b.icon||'🧳',location:b.location||'',items:(ir.data||[]).filter(i=>i.bag_id===b.id).map(i=>({id:i.id,cloudId:i.id,name:i.name,note:i.notes||'',qty:i.quantity||1,flag:i.flag||null,mediaPath:i.media_path||null,mediaType:i.media_type||null,mediaData:null,mediaUrl:null}))}));
     db={folders,bags}; save(); loadMediaUrls();
   }catch(e){console.error('Sync error',e);toast('Could not sync — showing local data');}
 }
@@ -1771,10 +1799,10 @@ async function cloudSaveItem(item,bagId){
     const cloudBagId=bag?bag.cloudId||null:null;
     if(!cloudBagId){toast('⚠️ Cloud save failed: bag not synced yet');return;}
     if(item.cloudId){
-      const{error}=await sb.from('items').update({name:item.name,notes:item.note,flag:item.flag||null,media_path:item.mediaPath||null,media_type:item.mediaType||null}).eq('id',item.cloudId);
+      const{error}=await sb.from('items').update({name:item.name,notes:item.note,quantity:item.qty||1,flag:item.flag||null,media_path:item.mediaPath||null,media_type:item.mediaType||null}).eq('id',item.cloudId);
       if(error){console.error(error);toast('⚠️ Cloud save failed: '+error.message);}
     }else{
-      const{data,error}=await sb.from('items').insert({name:item.name,notes:item.note,flag:item.flag||null,bag_id:cloudBagId,media_path:item.mediaPath||null,media_type:item.mediaType||null,user_id:window.activeOwnerId||currentUser.id}).select('id').single();
+      const{data,error}=await sb.from('items').insert({name:item.name,notes:item.note,quantity:item.qty||1,flag:item.flag||null,bag_id:cloudBagId,media_path:item.mediaPath||null,media_type:item.mediaType||null,user_id:window.activeOwnerId||currentUser.id}).select('id').single();
       if(!error){item.cloudId=data.id;save();}else{console.error(error);toast('⚠️ Cloud save failed: '+error.message);}
     }
   }catch(e){console.error(e);toast('⚠️ Cloud save failed: '+e.message);}
@@ -1851,10 +1879,11 @@ function renderHome(){
   else{
     le.style.display='none';
     ll.innerHTML=looseBags.map(b=>`
-      <div class="bag-card" onclick="openBag('${b.id}')">
+      <div class="bag-card" draggable="true" ondragstart="dragStart(event,'bag','${b.id}')" ondragend="dragEnd()" onclick="openBag('${b.id}')">
         <div class="bag-emo">${b.emoji||'🧳'}</div>
         <div class="bag-meta"><div class="bag-name">${esc(b.name)}</div><div class="bag-sub">${b.items.length} item${b.items.length===1?'':'s'}${b.location?' · 📍'+esc(b.location):''}</div></div>
         <div class="card-actions">
+          <button class="edit-btn" title="Move to…" onclick="event.stopPropagation();openMovePicker('bag','${b.id}')">⇄</button>
           <button class="edit-btn" onclick="event.stopPropagation();showEditBag('${b.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
           <button class="del-btn" onclick="event.stopPropagation();delBag('${b.id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
         </div>
@@ -2002,10 +2031,11 @@ function renderFolderBags(){
   else{
     empty.style.display='none';
     list.innerHTML=bags.map(b=>`
-      <div class="bag-card" onclick="openBag('${b.id}')">
+      <div class="bag-card" draggable="true" ondragstart="dragStart(event,'bag','${b.id}')" ondragend="dragEnd()" onclick="openBag('${b.id}')">
         <div class="bag-emo">${b.emoji||'🧳'}</div>
         <div class="bag-meta"><div class="bag-name">${esc(b.name)}</div><div class="bag-sub">${b.items.length} item${b.items.length===1?'':'s'}${b.location?' · 📍'+esc(b.location):''}</div></div>
         <div class="card-actions">
+          <button class="edit-btn" title="Move to…" onclick="event.stopPropagation();openMovePicker('bag','${b.id}')">⇄</button>
           <button class="edit-btn" onclick="event.stopPropagation();showEditBag('${b.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
           <button class="del-btn" onclick="event.stopPropagation();delBag('${b.id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
         </div>
@@ -2130,14 +2160,15 @@ function renderItems(){
   else{
     empty.style.display='none';
     list.innerHTML=bag.items.map(item=>`
-      <div class="item-card">
+      <div class="item-card" draggable="true" ondragstart="dragStart(event,'item','${item.id}')" ondragend="dragEnd()">
         <div class="item-thumb">${thumb(item)}</div>
         <div class="item-body">
-          <div class="item-name">${esc(item.name)}</div>
+          <div class="item-name">${esc(item.name)}${(item.qty||1)>1?` <span style="color:var(--text3);font-weight:600;">×${item.qty}</span>`:''}</div>
           ${item.note?`<div class="item-note">${esc(item.note)}</div>`:''}
           <div>${flagBadge(item.flag)}${item.mediaType?`<span class="badge ${item.mediaType==='video'?'bv':'bp'}">${item.mediaType}</span>`:''}</div>
         </div>
         <div class="item-actions">
+          <button class="item-edit-btn" title="Move to…" onclick="openMovePicker('item','${item.id}')">⇄</button>
           <button class="item-edit-btn" onclick="openEditItem('${item.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
           <button class="item-del" onclick="delItem('${item.id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
         </div>
@@ -2157,7 +2188,7 @@ function openEditItem(itemId){
   const bag=db.bags.find(b=>b.id===curBag); const item=bag.items.find(i=>i.id===itemId); if(!item) return;
   curEditItemId=itemId; editMedia={data:null,type:null,file:null,removed:false};
   editItemFlag=item.flag||null;
-  document.getElementById('edit-item-name').value=item.name;
+  document.getElementById('edit-item-name').value=item.name;document.getElementById('edit-item-qty').value=item.qty||1;
   document.getElementById('edit-item-note').value=item.note||'';
   document.getElementById('edit-flag-low').classList.toggle('active', editItemFlag==='low');
   document.getElementById('edit-flag-missing').classList.toggle('active', editItemFlag==='missing');
@@ -2196,7 +2227,7 @@ document.getElementById('btn-save-edit-item').addEventListener('click',async()=>
   const name=document.getElementById('edit-item-name').value.trim(); if(!name){toast('Please enter an item name');return;}
   const bag=db.bags.find(b=>b.id===curBag); const item=bag.items.find(i=>i.id===curEditItemId); if(!item){toast('Item not found');return;}
   const btn=document.getElementById('btn-save-edit-item'); btn.disabled=true; btn.textContent='Saving…';
-  item.name=name; item.note=document.getElementById('edit-item-note').value.trim(); item.flag=editItemFlag;
+  item.name=name; item.qty=Math.max(1,parseInt(document.getElementById('edit-item-qty').value)||1); item.note=document.getElementById('edit-item-note').value.trim(); item.flag=editItemFlag;
   if(editMedia.removed){if(item.mediaPath&&currentUser){try{await sb.storage.from('media').remove([item.mediaPath]);}catch(e){}}item.mediaPath=null;item.mediaData=null;item.mediaUrl=null;item.mediaType=null;}
   else if(editMedia.file){
     if(currentUser){try{toast('Uploading…');const path=await uploadMedia(editMedia.file,curBag);if(item.mediaPath)await sb.storage.from('media').remove([item.mediaPath]);item.mediaPath=path;item.mediaData=null;item.mediaUrl=null;item.mediaType=editMedia.type;const{data}=await sb.storage.from('media').createSignedUrl(path,3600);if(data)item.mediaUrl=data.signedUrl;}catch(e){item.mediaData=editMedia.data;item.mediaType=editMedia.type;}}
@@ -2289,8 +2320,8 @@ document.getElementById('btn-save-item').addEventListener('click',async()=>{
   if(currentUser&&filesToUpload.length){
     try{toast(`Uploading photo…`);primaryPath=await uploadMedia(filesToUpload[0].file,curBag);}catch(e){console.error(e);}
   }
-  const item={id:itemId,name,note:document.getElementById('inp-item-note').value.trim(),flag:addItemFlag,mediaData:primaryPath?null:media.data,mediaType:filesToUpload.length?filesToUpload[0].type:media.type,mediaPath:primaryPath,mediaPaths:null};
-  bag.items.push(item); save(); renderHome(); renderItems(); go('bag-detail'); setTab('items');
+  const item={id:itemId,name,qty:Math.max(1,parseInt(document.getElementById('inp-item-qty').value)||1),note:document.getElementById('inp-item-note').value.trim(),flag:addItemFlag,mediaData:primaryPath?null:media.data,mediaType:filesToUpload.length?filesToUpload[0].type:media.type,mediaPath:primaryPath,mediaPaths:null};
+  bag.items.push(item); document.getElementById('inp-item-qty').value=1; save(); renderHome(); renderItems(); go('bag-detail'); setTab('items');
   btn.disabled=false; btn.textContent='Save item'; toast('Item saved ✅');
   cloudSaveItem(item,curBag);
   if(primaryPath){try{const{data}=await sb.storage.from('media').createSignedUrl(primaryPath,3600);if(data){item.mediaUrl=data.signedUrl;renderItems();}}catch(e){}}
@@ -2752,6 +2783,126 @@ document.querySelectorAll('#atype-overlay .atype-card').forEach(c=>c.addEventLis
 }));
 document.getElementById('btn-atype-save').addEventListener('click',()=>saveAccountType(_atypePick));
 document.querySelectorAll('#acct-type-seg button').forEach(b=>b.addEventListener('click',()=>saveAccountType(b.dataset.type)));
+
+// ── MOVES (drag and drop, Move to…, Undo, Recent moves) ──
+var _drag=null,_undoTimer=null;
+function mvOpen(h){document.getElementById('mv-sheet').innerHTML=h;document.getElementById('mv-ov').classList.add('open');}
+function mvClose(){document.getElementById('mv-ov').classList.remove('open');}
+document.getElementById('mv-ov').addEventListener('click',e=>{if(e.target.id==='mv-ov')mvClose();});
+function mvFolderName(bagId){const f=db.folders.find(x=>(x.bags||[]).includes(bagId));return f?f.name:'No folder';}
+function mvSubjectName(kind,id){
+  if(kind==='bag'){const b=db.bags.find(x=>x.id===id);return b?b.name:'';}
+  for(const b of db.bags){const i=b.items.find(x=>x.id===id);if(i)return i.name;}return '';
+}
+function mvTargets(kind,id){
+  if(kind==='bag'){
+    const cur=db.folders.find(f=>(f.bags||[]).includes(id));
+    const t=db.folders.filter(f=>!cur||f.id!==cur.id).map(f=>({id:f.id,name:f.name,sub:'Folder'}));
+    if(cur) t.unshift({id:'',name:'No folder',sub:'Take it out of its folder'});
+    return t;
+  }
+  const from=db.bags.find(b=>b.items.some(i=>i.id===id));
+  return db.bags.filter(b=>!from||b.id!==from.id).map(b=>({id:b.id,name:b.name,sub:'in '+mvFolderName(b.id)}));
+}
+function openMovePicker(kind,id){
+  if(!canEdit()){toast('🔒 Viewers can\'t move things');return;}
+  const t=mvTargets(kind,id);
+  const list=t.length?t.map(x=>`<button class="mv-opt" data-tid="${x.id}" data-q="${esc((x.name+' '+x.sub).toLowerCase())}">${esc(x.name)}<small>${esc(x.sub)}</small></button>`).join(''):'<div class="mv-sub">There is nowhere else to move this yet.</div>';
+  mvOpen(`<div class="mv-title">Move “${esc(mvSubjectName(kind,id))}” to…</div><input class="search-inp" id="mv-q" placeholder="Search" style="margin-bottom:10px;"/><div id="mv-list">${list}</div><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button></div>`);
+  document.getElementById('mv-q').addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#mv-list .mv-opt').forEach(b=>b.style.display=b.dataset.q.includes(q)?'':'none');});
+  document.getElementById('mv-list').addEventListener('click',e=>{const b=e.target.closest('.mv-opt');if(b)requestMove(kind,id,b.dataset.tid);});
+}
+function requestMove(kind,id,tid){
+  if(!canEdit()){toast('🔒 Viewers can\'t move things');return;}
+  const tgt=kind==='bag'?(tid?db.folders.find(f=>f.id===tid):{name:'No folder'}):db.bags.find(b=>b.id===tid);
+  if(!tgt){toast('That destination no longer exists');return;}
+  mvOpen(`<div class="mv-title">Do you want to move this?</div><div style="font-size:14px;color:var(--text2);line-height:1.5;">Move <b>${esc(mvSubjectName(kind,id))}</b> to <b>${esc(tgt.name)}</b>?</div><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button><button class="mv-yes" id="mv-yes">Yes, move</button></div>`);
+  document.getElementById('mv-yes').onclick=async()=>{mvClose();const rec=await performMove(kind,id,tid);if(rec)showUndo(rec);};
+}
+function mvRefresh(){
+  save();renderHome();
+  try{if(curFolder&&db.folders.find(f=>f.id===curFolder))renderFolderBags();}catch(e){}
+  try{if(curBag&&db.bags.find(b=>b.id===curBag))renderItems();}catch(e){}
+}
+async function performMove(kind,id,tid,opts){
+  opts=opts||{};
+  if(!currentUser){toast('Sign in to move things');return null;}
+  let rec;
+  try{
+    if(kind==='bag'){
+      const bag=db.bags.find(b=>b.id===id),from=db.folders.find(f=>(f.bags||[]).includes(id)),to=tid?db.folders.find(f=>f.id===tid):null;
+      if(!bag||!bag.cloudId||(to&&!to.cloudId)){toast('Still syncing — try again in a moment');return null;}
+      const{error}=await sb.from('bags').update({folder_id:to?to.cloudId:null}).eq('id',bag.cloudId);
+      if(error) throw error;
+      if(from) from.bags=from.bags.filter(x=>x!==id);
+      if(to){to.bags=to.bags||[];to.bags.push(id);}
+      rec={kind,subject_id:bag.cloudId,subject_name:bag.name,from_id:from?from.cloudId:null,from_name:from?from.name:'No folder',to_id:to?to.cloudId:null,to_name:to?to.name:'No folder'};
+    }else{
+      const from=db.bags.find(b=>b.items.some(i=>i.id===id)),to=db.bags.find(b=>b.id===tid);
+      const item=from&&from.items.find(i=>i.id===id);
+      if(!item||!to||!item.cloudId||!to.cloudId){toast('Still syncing — try again in a moment');return null;}
+      const{error}=await sb.from('items').update({bag_id:to.cloudId}).eq('id',item.cloudId);
+      if(error) throw error;
+      from.items=from.items.filter(i=>i.id!==id);to.items.push(item);
+      rec={kind,subject_id:item.cloudId,subject_name:item.name,from_id:from.cloudId,from_name:from.name,to_id:to.cloudId,to_name:to.name};
+    }
+  }catch(e){console.error(e);toast('⚠️ Move failed: '+(e.message||e));return null;}
+  mvRefresh();
+  if(!opts.skipLog){
+    try{
+      const{data}=await sb.from('moves').insert(Object.assign({owner_id:window.activeOwnerId||currentUser.id,moved_by_name:currentUser.email||null},rec)).select('id').single();
+      if(data)rec.id=data.id;
+    }catch(e){console.error(e);}
+  }
+  return rec;
+}
+async function undoRecord(rec){
+  if(!canEdit()){toast('🔒 Viewers can\'t move things');return;}
+  if(rec.undone){toast('Already undone');return;}
+  let subj=null,target='';
+  if(rec.kind==='bag'){
+    const b=db.bags.find(x=>x.cloudId===rec.subject_id);subj=b&&b.id;
+    if(rec.from_id){const f=db.folders.find(x=>x.cloudId===rec.from_id);if(!f){toast('The original folder no longer exists');return;}target=f.id;}
+  }else{
+    for(const b of db.bags){const i=b.items.find(x=>x.cloudId===rec.subject_id);if(i){subj=i.id;break;}}
+    const tb=db.bags.find(x=>x.cloudId===rec.from_id);if(!tb){toast('The original bag no longer exists');return;}target=tb.id;
+  }
+  if(!subj){toast('That '+rec.kind+' no longer exists');return;}
+  const out=await performMove(rec.kind,subj,target,{skipLog:true});
+  if(out){rec.undone=true;if(rec.id){try{await sb.from('moves').update({undone:true}).eq('id',rec.id);}catch(e){}}toast('↩️ Move undone');}
+}
+function showUndo(rec){
+  const el=document.getElementById('undo-bar');
+  el.innerHTML=`<span>Moved to ${esc(rec.to_name)}</span><button id="undo-btn">Undo</button>`;
+  el.style.display='flex';
+  document.getElementById('undo-btn').onclick=async()=>{el.style.display='none';await undoRecord(rec);};
+  clearTimeout(_undoTimer);_undoTimer=setTimeout(()=>{el.style.display='none';},9000);
+}
+async function openRecentMoves(){
+  mvOpen('<div class="mv-title">Recent moves</div><div class="mv-sub">Loading…</div>');
+  const{data,error}=await sb.from('moves').select('*').order('created_at',{ascending:false}).limit(5);
+  if(error){mvOpen(`<div class="mv-title">Recent moves</div><div class="mv-sub">Could not load. ${esc(error.message)}</div><div class="mv-row"><button class="mv-no" onclick="mvClose()">Close</button></div>`);return;}
+  window._recentMoves=data||[];
+  const rows=window._recentMoves.map((r,n)=>{
+    const when=new Date(r.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
+    return`<div class="mv-rec"><div>${esc(r.subject_name)}<small>${esc(r.from_name||'—')} → ${esc(r.to_name||'—')}</small><small>${esc(r.moved_by_name||'')} · ${when}</small></div>${r.undone?'<span class="mv-sub">Undone</span>':`<button onclick="undoRecentMove(${n})">Undo</button>`}</div>`;
+  }).join('');
+  mvOpen(`<div class="mv-title">Recent moves</div>${rows||'<div class="mv-sub">No moves yet.</div>'}<div class="mv-row"><button class="mv-no" onclick="mvClose()">Close</button></div>`);
+}
+window.undoRecentMove=async function(n){const r=(window._recentMoves||[])[n];if(!r)return;mvClose();await undoRecord(r);};
+function dragStart(e,kind,id){
+  if(!canEdit()){e.preventDefault();return;}
+  _drag={kind,id};e.dataTransfer.setData('text/plain',id);e.dataTransfer.effectAllowed='move';
+  const t=mvTargets(kind,id),p=document.getElementById('drop-panel');
+  p.innerHTML='<div class="mv-sub" style="margin-bottom:8px;">Drop on a '+(kind==='bag'?'folder':'bag')+'</div>'+(t.map(x=>`<div class="drop-t" data-tid="${x.id}">${esc(x.name)}<small>${esc(x.sub)}</small></div>`).join('')||'<div class="mv-sub">Nowhere else to move this.</div>');
+  p.style.display='block';
+  p.querySelectorAll('.drop-t').forEach(el=>{
+    el.addEventListener('dragover',ev=>{ev.preventDefault();el.classList.add('over');});
+    el.addEventListener('dragleave',()=>el.classList.remove('over'));
+    el.addEventListener('drop',ev=>{ev.preventDefault();const d=_drag;dragEnd();if(d)requestMove(d.kind,d.id,el.dataset.tid);});
+  });
+}
+function dragEnd(){document.getElementById('drop-panel').style.display='none';}
 
 // ── URL HANDLER + INIT ──
 (async function(){
