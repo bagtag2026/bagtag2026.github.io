@@ -540,6 +540,8 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
     <button class="btn-p" id="btn-atype-save" style="width:100%;padding:14px;border:none;border-radius:99px;font-family:var(--font);font-size:15px;">Continue</button>
   </div>
 </div>
+<input type="file" accept="image/*" capture="environment" id="photo-cam" hidden>
+<input type="file" accept="image/*" id="photo-gal" hidden>
 <div class="mv-ov" id="mv-ov"><div class="mv-sheet" id="mv-sheet"></div></div>
 <div id="drop-panel"></div>
 <div id="undo-bar"></div>
@@ -836,6 +838,7 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
         <div class="empty-sub">Tap Add item to start cataloguing this bag.</div>
       </div>
       <button class="btn btn-s" id="btn-add-item" style="margin-top:10px;">+ Add item</button>
+      <button class="btn btn-s" id="btn-photo-items" style="margin-top:8px;">📷 Add from photo <span style="font-size:10px;font-weight:800;padding:2px 6px;border-radius:99px;background:var(--accent);color:#fff;vertical-align:middle;">PRO</span></button>
     </div>
     <div id="pane-qr" style="display:none;">
       <div class="qr-wrap">
@@ -2903,6 +2906,75 @@ function dragStart(e,kind,id){
   });
 }
 function dragEnd(){document.getElementById('drop-panel').style.display='none';}
+
+// ── PHOTO TO ITEMS ──
+var _phItems=[];
+function openPhotoChooser(){
+  if(!currentUser){toast('Please sign in first');return;}
+  if(!canEdit()){toast('🔒 Viewers can\'t add items');return;}
+  if(!isPro()){toast('📷 Photo to items is a Pro feature. See Account to upgrade.');return;}
+  mvOpen(`<div class="mv-title">Add items from a photo</div><div class="mv-sub" style="margin-bottom:12px;line-height:1.5;">Photograph the open box from above, with items spread out and good light. Please photograph items only, not people.</div><button class="mv-opt" id="ph-cam">📷 Take a photo</button><button class="mv-opt" id="ph-gal">🖼 Choose from gallery</button><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button></div>`);
+  document.getElementById('ph-cam').onclick=()=>document.getElementById('photo-cam').click();
+  document.getElementById('ph-gal').onclick=()=>document.getElementById('photo-gal').click();
+}
+function photoToBase64(file){
+  return new Promise((res,rej)=>{
+    const img=new Image(),url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const sc=Math.min(1,1600/Math.max(img.width,img.height));
+      const w=Math.round(img.width*sc),h=Math.round(img.height*sc);
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg',0.8).split(',')[1]);
+    };
+    img.onerror=()=>rej(new Error('Could not read that photo'));
+    img.src=url;
+  });
+}
+function photoRetry(title,msg){
+  mvOpen(`<div class="mv-title">${esc(title)}</div><div class="mv-sub" style="line-height:1.5;">${esc(msg)}</div><div class="mv-row"><button class="mv-no" onclick="mvClose()">Close</button><button class="mv-yes" onclick="openPhotoChooser()">Try again</button></div>`);
+}
+async function handlePhotoFile(file){
+  if(!file) return;
+  mvOpen('<div class="mv-title">Reading your photo…</div><div class="mv-sub">This takes a few seconds.</div>');
+  try{
+    const b64=await photoToBase64(file);
+    const{data,error}=await sb.functions.invoke('photo-to-items',{body:{image_base64:b64,media_type:'image/jpeg'}});
+    if(error){let m=error.message;try{const j=await error.context.json();if(j&&j.error)m=j.error;}catch(e){}throw new Error(m);}
+    if(data&&data.error) throw new Error(data.error);
+    showPhotoReview(data||{});
+  }catch(e){photoRetry('Could not read the photo',e.message||'Please try again.');}
+}
+function showPhotoReview(d){
+  _phItems=(d.items||[]).map(i=>({name:i.name,qty:i.quantity||1}));
+  if(!_phItems.length){photoRetry('No items found','Try a clearer photo from above, with the items spread out.');return;}
+  const numStyle='width:64px;padding:8px;border:1.5px solid var(--border2);border-radius:10px;font-family:var(--font);background:var(--surface);color:var(--text);';
+  const rows=_phItems.map((it,n)=>`<div class="mv-rec"><input type="checkbox" id="ph-on-${n}" checked style="width:20px;height:20px;flex:none;"/><input class="search-inp" id="ph-name-${n}" value="${esc(it.name)}" style="flex:1;min-width:0;"/><input type="number" id="ph-qty-${n}" min="1" value="${it.qty}" style="${numStyle}"/></div>`).join('');
+  mvOpen(`<div class="mv-title">Is this right?</div>${d.demo?'<div class="mv-sub" style="margin-bottom:8px;background:#FFF8E1;color:#8D6E00;padding:8px 10px;border-radius:10px;">Demo mode: these are sample items, not from your photo.</div>':''}<div class="mv-sub" style="margin-bottom:8px;line-height:1.5;">Untick anything wrong and fix names or quantities. Photos can miss items hidden under others.</div>${rows}<div class="mv-sub" style="margin-top:8px;">Scans left this month: ${d.remaining!=null?d.remaining:'—'}</div><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button><button class="mv-yes" id="ph-add">Add selected</button></div>`);
+  document.getElementById('ph-add').onclick=addPhotoItems;
+}
+async function addPhotoItems(){
+  const bag=db.bags.find(b=>b.id===curBag);if(!bag){mvClose();return;}
+  const chosen=[];
+  _phItems.forEach((it,n)=>{
+    if(!document.getElementById('ph-on-'+n).checked) return;
+    const name=document.getElementById('ph-name-'+n).value.trim();if(!name) return;
+    chosen.push({name,qty:Math.max(1,parseInt(document.getElementById('ph-qty-'+n).value)||1)});
+  });
+  if(!chosen.length){toast('Nothing is ticked');return;}
+  mvClose();
+  for(const c of chosen){
+    const ex=bag.items.find(i=>i.name.trim().toLowerCase()===c.name.toLowerCase());
+    if(ex){ex.qty=(ex.qty||1)+c.qty;await cloudSaveItem(ex,curBag);}
+    else{
+      const item={id:uid(),name:c.name,qty:c.qty,note:'',flag:null,mediaData:null,mediaType:null,mediaPath:null,mediaPaths:null};
+      bag.items.push(item);await cloudSaveItem(item,curBag);
+    }
+  }
+  save();renderHome();renderItems();toast(`✅ ${chosen.length} item${chosen.length>1?'s':''} added`);
+}
+document.getElementById('btn-photo-items').addEventListener('click',openPhotoChooser);
+['photo-cam','photo-gal'].forEach(id=>document.getElementById(id).addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';handlePhotoFile(f);}));
 
 // ── URL HANDLER + INIT ──
 (async function(){
