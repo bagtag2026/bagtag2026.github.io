@@ -830,6 +830,7 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
   </div>
   <div class="scroll-area">
     <div id="pane-items">
+      <div id="bag-ref-photo" style="display:none;"></div>
       <div id="bag-location-display" style="display:none;margin-bottom:10px;padding:8px 12px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rsm);font-size:12px;color:var(--text2);font-family:var(--mono);">📍 <span id="bag-location-text"></span></div>
       <div id="item-list"></div>
       <div id="item-empty" class="empty" style="display:none;">
@@ -1760,7 +1761,7 @@ async function syncFromCloud(){
   try{
     const[fr,br,ir]=await Promise.all([sb.from('folders').select('*').order('created_at'),sb.from('bags').select('*').order('created_at'),sb.from('items').select('*').order('created_at')]);
     const folders=(fr.data||[]).map(f=>({id:f.id,cloudId:f.id,name:f.name,emoji:f.icon||'📁',color:f.colour||1,bags:(br.data||[]).filter(b=>b.folder_id===f.id).map(b=>b.qr_id||b.id)}));
-    const bags=(br.data||[]).map(b=>({id:b.qr_id||b.id,cloudId:b.id,name:b.name,emoji:b.icon||'🧳',location:b.location||'',items:(ir.data||[]).filter(i=>i.bag_id===b.id).map(i=>({id:i.id,cloudId:i.id,name:i.name,note:i.notes||'',qty:i.quantity||1,flag:i.flag||null,mediaPath:i.media_path||null,mediaType:i.media_type||null,mediaData:null,mediaUrl:null}))}));
+    const bags=(br.data||[]).map(b=>({id:b.qr_id||b.id,cloudId:b.id,name:b.name,emoji:b.icon||'🧳',location:b.location||'',refPath:b.reference_photo_path||null,items:(ir.data||[]).filter(i=>i.bag_id===b.id).map(i=>({id:i.id,cloudId:i.id,name:i.name,note:i.notes||'',qty:i.quantity||1,flag:i.flag||null,mediaPath:i.media_path||null,mediaType:i.media_type||null,mediaData:null,mediaUrl:null}))}));
     db={folders,bags}; save(); loadMediaUrls();
   }catch(e){console.error('Sync error',e);toast('Could not sync — showing local data');}
 }
@@ -2083,13 +2084,13 @@ function openBag(id){
   const locDisp=document.getElementById('bag-location-display');
   const locTxt=document.getElementById('bag-location-text');
   if(b.location){locDisp.style.display='';locTxt.textContent=b.location;}else locDisp.style.display='none';
-  setTab('items'); renderItems(); go('bag-detail');
+  setTab('items'); renderItems(); renderRefPhoto(); go('bag-detail');
 }
 function delBag(id){
   if(!canEdit()){toast('🔒 Viewers can\'t delete bags');return;}
   if(!confirm('Delete this bag and all contents?')) return;
   const b=db.bags.find(x=>x.id===id); db.bags=db.bags.filter(x=>x.id!==id);
-  db.folders.forEach(f=>{if(f.bags)f.bags=f.bags.filter(bid=>bid!==id);}); save(); renderHome(); toast('Bag deleted'); cloudDeleteBag(b);
+  db.folders.forEach(f=>{if(f.bags)f.bags=f.bags.filter(bid=>bid!==id);}); save(); renderHome(); toast('Bag deleted'); if(b&&b.refPath){sb.storage.from('media').remove([b.refPath]).catch(()=>{});} cloudDeleteBag(b);
   if(document.getElementById('screen-bag-detail').classList.contains('active')){const folder=getFolderForBag(id);if(folder){renderFolderBags();go('folder-detail');}else{renderHome();go('home');}}
 }
 function showAddBag(folderId=null){
@@ -2908,7 +2909,8 @@ function dragStart(e,kind,id){
 function dragEnd(){document.getElementById('drop-panel').style.display='none';}
 
 // ── PHOTO TO ITEMS ──
-var _phItems=[];
+var _phItems=[],_phBlob=null;
+function b64ToBlob(b64){const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:'image/jpeg'});}
 function openPhotoChooser(){
   if(!currentUser){toast('Please sign in first');return;}
   if(!canEdit()){toast('🔒 Viewers can\'t add items');return;}
@@ -2939,6 +2941,7 @@ async function handlePhotoFile(file){
   mvOpen('<div class="mv-title">Reading your photo…</div><div class="mv-sub">This takes a few seconds.</div>');
   try{
     const b64=await photoToBase64(file);
+    _phBlob=b64ToBlob(b64);
     const{data,error}=await sb.functions.invoke('photo-to-items',{body:{image_base64:b64,media_type:'image/jpeg'}});
     if(error){let m=error.message;try{const j=await error.context.json();if(j&&j.error)m=j.error;}catch(e){}throw new Error(m);}
     if(data&&data.error) throw new Error(data.error);
@@ -2950,11 +2953,12 @@ function showPhotoReview(d){
   if(!_phItems.length){photoRetry('No items found','Try a clearer photo from above, with the items spread out.');return;}
   const numStyle='width:64px;padding:8px;border:1.5px solid var(--border2);border-radius:10px;font-family:var(--font);background:var(--surface);color:var(--text);';
   const rows=_phItems.map((it,n)=>`<div class="mv-rec"><input type="checkbox" id="ph-on-${n}" checked style="width:20px;height:20px;flex:none;"/><input class="search-inp" id="ph-name-${n}" value="${esc(it.name)}" style="flex:1;min-width:0;"/><input type="number" id="ph-qty-${n}" min="1" value="${it.qty}" style="${numStyle}"/></div>`).join('');
-  mvOpen(`<div class="mv-title">Is this right?</div>${d.demo?'<div class="mv-sub" style="margin-bottom:8px;background:#FFF8E1;color:#8D6E00;padding:8px 10px;border-radius:10px;">Demo mode: these are sample items, not from your photo.</div>':''}<div class="mv-sub" style="margin-bottom:8px;line-height:1.5;">Untick anything wrong and fix names or quantities. Photos can miss items hidden under others.</div>${rows}<div class="mv-sub" style="margin-top:8px;">Scans left this month: ${d.remaining!=null?d.remaining:'—'}</div><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button><button class="mv-yes" id="ph-add">Add selected</button></div>`);
+  mvOpen(`<div class="mv-title">Is this right?</div>${d.demo?'<div class="mv-sub" style="margin-bottom:8px;background:#FFF8E1;color:#8D6E00;padding:8px 10px;border-radius:10px;">Demo mode: these are sample items, not from your photo.</div>':''}<div class="mv-sub" style="margin-bottom:8px;line-height:1.5;">Untick anything wrong and fix names or quantities. Photos can miss items hidden under others.</div>${rows}${(db.bags.find(b=>b.id===curBag)||{}).refPath?'<div class="mv-sub" style="margin-top:10px;">This bag already has a reference photo. Ticking below replaces it.</div>':''}<label class="mv-sub" style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;line-height:1.4;"><input type="checkbox" id="ph-keep" style="width:18px;height:18px;flex:none;margin-top:1px;"/><span>Also save this photo as the reference photo for this bag (photograph items only, not people)</span></label><div class="mv-sub" style="margin-top:8px;">Scans left this month: ${d.remaining!=null?d.remaining:'—'}</div><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button><button class="mv-yes" id="ph-add">Add selected</button></div>`);
   document.getElementById('ph-add').onclick=addPhotoItems;
 }
 async function addPhotoItems(){
   const bag=db.bags.find(b=>b.id===curBag);if(!bag){mvClose();return;}
+  const keep=!!(document.getElementById('ph-keep')&&document.getElementById('ph-keep').checked);
   const chosen=[];
   _phItems.forEach((it,n)=>{
     if(!document.getElementById('ph-on-'+n).checked) return;
@@ -2972,9 +2976,48 @@ async function addPhotoItems(){
     }
   }
   save();renderHome();renderItems();toast(`✅ ${chosen.length} item${chosen.length>1?'s':''} added`);
+  if(keep&&_phBlob&&bag.cloudId){
+    try{
+      const path=await uploadMedia(new File([_phBlob],'reference.jpg',{type:'image/jpeg'}),curBag);
+      const{error}=await sb.from('bags').update({reference_photo_path:path}).eq('id',bag.cloudId);
+      if(error) throw error;
+      const old=bag.refPath;bag.refPath=path;
+      if(old) sb.storage.from('media').remove([old]).catch(()=>{});
+      save();renderRefPhoto();
+    }catch(e){console.error(e);toast('Items added, but the reference photo could not be saved');}
+  }
 }
 document.getElementById('btn-photo-items').addEventListener('click',openPhotoChooser);
 ['photo-cam','photo-gal'].forEach(id=>document.getElementById(id).addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';handlePhotoFile(f);}));
+
+// ── BAG REFERENCE PHOTO ──
+async function renderRefPhoto(){
+  const box=document.getElementById('bag-ref-photo');
+  const b=db.bags.find(x=>x.id===curBag);
+  if(!b||!b.refPath){box.style.display='none';box.innerHTML='';return;}
+  box.style.display='';
+  try{
+    const{data,error}=await sb.storage.from('media').createSignedUrl(b.refPath,3600);
+    if(error||!data) throw (error||new Error('no url'));
+    b.refUrl=data.signedUrl;
+    box.innerHTML=`<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;padding:10px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rsm);"><img src="${data.signedUrl}" onclick="viewRefPhoto()" style="width:72px;height:72px;object-fit:cover;border-radius:10px;"/><div style="flex:1;font-size:13px;color:var(--text2);line-height:1.4;"><b style="color:var(--text);display:block;">Reference photo</b>How this box looks when complete. Tap to enlarge.</div></div>`;
+  }catch(e){box.style.display='none';}
+}
+function viewRefPhoto(){
+  const b=db.bags.find(x=>x.id===curBag);if(!b||!b.refUrl) return;
+  mvOpen(`<div class="mv-title">Reference photo</div><img src="${b.refUrl}" style="width:100%;border-radius:12px;"/><div class="mv-row"><button class="mv-no" onclick="mvClose()">Close</button>${canEdit()?'<button class="mv-no" onclick="removeRefPhoto()">Remove</button>':''}</div>`);
+}
+async function removeRefPhoto(){
+  const b=db.bags.find(x=>x.id===curBag);if(!b||!canEdit()) return;
+  if(!confirm('Remove the reference photo from this bag?')) return;
+  mvClose();
+  try{
+    const{error}=await sb.from('bags').update({reference_photo_path:null}).eq('id',b.cloudId);
+    if(error) throw error;
+    sb.storage.from('media').remove([b.refPath]).catch(()=>{});
+    b.refPath=null;b.refUrl=null;save();renderRefPhoto();toast('Reference photo removed');
+  }catch(e){toast('Could not remove the photo');}
+}
 
 // ── URL HANDLER + INIT ──
 (async function(){
