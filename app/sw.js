@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bagtag-v5';
+const CACHE_NAME = 'bagtag-v6';
 const CORE_ASSETS = [
   '/app/',
   '/app/index.html',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap',
+   'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@600;800;900&display=swap',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
   'https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js',
   'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'
