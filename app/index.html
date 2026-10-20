@@ -557,6 +557,10 @@ button:focus-visible,a:focus-visible,.icon-opt:focus-visible{outline:2px solid v
 /* password & date fields match text fields; tidy browser autofill */
 input[type=password],input[type=date]{width:100%;padding:13px 14px;font-size:15px;background:var(--surface);color:var(--text);font-family:var(--font);outline:none;-webkit-appearance:none;appearance:none;min-height:48px;}
 input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(--text);box-shadow:0 0 0 100px var(--surface) inset;caret-color:var(--text);}
+
+/* breadcrumb: darken folder colour so light hues stay readable */
+.breadcrumb span{font-weight:700;filter:brightness(.7) saturate(1.15);}
+@media(prefers-color-scheme:dark){.breadcrumb span{filter:none;}}
 /* search field: single pill, no inner box */
 .search-box .search-inp,.search-box .search-inp:focus{border:none;border-radius:0;box-shadow:none;background:none;padding:2px 0;width:auto;}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;}}
@@ -945,7 +949,7 @@ input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(
         <div class="empty-title">No items yet</div>
         <div class="empty-sub">Tap Add item to start cataloguing this bag.</div>
       </div>
-      <button class="btn btn-s" id="btn-add-item" style="margin-top:10px;">+ Add item</button>
+      <button class="btn btn-p" id="btn-add-item" style="margin-top:10px;">+ Add item</button>
       <button class="btn btn-s" id="btn-photo-items" style="margin-top:8px;">📷 Add from photo <span style="font-size:10px;font-weight:800;padding:2px 6px;border-radius:99px;background:var(--accent);color:#fff;vertical-align:middle;">PRO</span></button>
     </div>
     <div id="pane-qr" style="display:none;">
@@ -1779,7 +1783,7 @@ searchClear.addEventListener('click',()=>{searchInp.value='';doSearch('');search
 
 // ── AUTH ──
 let authMode='signin';
-function showAuthScreen(){document.getElementById('auth-screen').classList.add('active');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.fab').forEach(f=>f.style.display='none');}
+function showAuthScreen(){const _bn=document.getElementById('bottom-nav');if(_bn)_bn.classList.remove('visible');document.getElementById('auth-screen').classList.add('active');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.fab').forEach(f=>f.style.display='none');}
 function hideAuthScreen(){document.getElementById('auth-screen').classList.remove('active');}
 function setAuthMode(mode){
   authMode=mode;
