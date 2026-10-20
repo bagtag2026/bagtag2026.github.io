@@ -553,6 +553,10 @@ button:focus-visible,a:focus-visible,.icon-opt:focus-visible{outline:2px solid v
 #drop-panel{border-radius:20px;}
 
 
+
+/* password & date fields match text fields; tidy browser autofill */
+input[type=password],input[type=date]{width:100%;padding:13px 14px;font-size:15px;background:var(--surface);color:var(--text);font-family:var(--font);outline:none;-webkit-appearance:none;appearance:none;min-height:48px;}
+input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(--text);box-shadow:0 0 0 100px var(--surface) inset;caret-color:var(--text);}
 /* search field: single pill, no inner box */
 .search-box .search-inp,.search-box .search-inp:focus{border:none;border-radius:0;box-shadow:none;background:none;padding:2px 0;width:auto;}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;}}
