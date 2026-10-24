@@ -75,10 +75,15 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .folder-chev{color:var(--text3);font-size:18px;flex-shrink:0;}
 .del-btn{width:34px;height:34px;min-width:34px;border:none;background:none;display:flex;align-items:center;justify-content:center;border-radius:8px;}
 body.role-viewer .del-btn{display:none;}
+body.plan-locked .card-actions,body.plan-locked .del-btn{display:none;}
 .del-btn svg{width:15px;height:15px;stroke:var(--text3);fill:none;stroke-width:1.8;stroke-linecap:round;}
 .bag-card{display:flex;align-items:center;gap:12px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:9px;}
 .bag-card:active{opacity:.75;}
 .bag-emo{width:46px;height:46px;min-width:46px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.bag-emo{position:relative;}
+.bag-emo.has-photo{background:none;}
+.bag-emo img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;}
+.bag-dot{position:absolute;right:-4px;top:-4px;width:15px;height:15px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 .5px rgba(0,0,0,.18);}
 .bag-meta{flex:1;min-width:0;}
 .bag-name{font-size:14px;font-weight:500;}
 .bag-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;}
@@ -116,6 +121,10 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
 .color-swatch:hover{transform:scale(1.15);}
 .color-swatch.selected{border-color:#111;box-shadow:0 0 0 2px var(--surface),0 0 0 4px #111;}
 .color-swatch.selected::after{content:'✓';color:#fff;font-size:.8rem;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.5);}
+.color-swatch.none{background:var(--surface2);border:3px solid var(--border2);}
+.color-swatch.none::before{content:'✕';font-size:13px;color:var(--text3);}
+.color-swatch.none.selected{border-color:var(--text);box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--text);}
+.color-swatch.none.selected::after{content:'';}
 .icon-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;max-height:200px;overflow-y:auto;padding:4px;border:1px solid var(--border2);border-radius:var(--rsm);background:var(--surface);}
 .icon-opt{width:52px;height:52px;border-radius:10px;border:2px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:1.5rem;transition:all .12s;background:var(--surface2);gap:1px;}
 .icon-opt:hover{background:var(--accent-lt);border-color:var(--accent);}
@@ -395,6 +404,7 @@ textarea{min-height:80px;resize:vertical;line-height:1.5;}
 .plan-chip.pro{background:linear-gradient(135deg,#00BCD4,#3D5AFE,#9C27B0);color:white;}
 .plan-chip.free{background:var(--surface2);color:var(--text3);}
 .plan-chip.restricted{background:var(--red-lt);color:var(--red);}
+.plan-chip.basic{background:var(--success-lt);color:var(--success);}
 
 /* ── MEMBER / SHARING ── */
 .member-card{display:flex;align-items:center;gap:12px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;}
@@ -653,6 +663,8 @@ input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(
 </div>
 <input type="file" accept="image/*" capture="environment" id="photo-cam" hidden>
 <input type="file" accept="image/*" id="photo-gal" hidden>
+<input type="file" accept="image/*" capture="environment" id="bagphoto-cam" hidden>
+<input type="file" accept="image/*" id="bagphoto-gal" hidden>
 <div class="mv-ov" id="mv-ov"><div class="mv-sheet" id="mv-sheet"></div></div>
 <div id="drop-panel"></div>
 <div id="undo-bar"></div>
@@ -746,8 +758,8 @@ input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(
   <div id="trial-banner" style="display:none;padding:10px 20px 0;">
     <div class="trial-banner">
       <div class="trial-banner-text">
-        <div class="trial-banner-title">⏳ Trial: <span id="trial-bags-used">0</span>/10 bags used</div>
-        <div>Upgrade for unlimited bags &amp; all Pro features</div>
+        <div class="trial-banner-title" id="trial-banner-title">⏳ Trial</div>
+        <div id="trial-banner-sub"></div>
       </div>
       <button class="trial-upgrade-btn" onclick="showProSheet('trial')">Upgrade</button>
     </div>
@@ -879,8 +891,9 @@ input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(
       <input type="text" id="inp-bag-location" placeholder="e.g. Top shelf, Art Room · Cabinet 2"/>
     </div>
     <div class="form-group">
-      <label class="form-lbl">Colour</label>
+      <label class="form-lbl">Colour dot (optional)</label>
       <div class="color-grid" id="bag-color-grid"></div>
+      <div style="font-size:12px;color:var(--text3);margin-top:6px;line-height:1.4;">A coloured dot on the bag card helps you spot similar-looking bags.</div>
     </div>
     <div class="form-group">
       <label class="form-lbl">Folder (optional)</label>
@@ -914,8 +927,9 @@ input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(
       <input type="text" id="edit-bag-location" placeholder="e.g. Top shelf, Art Room · Cabinet 2"/>
     </div>
     <div class="form-group">
-      <label class="form-lbl">Colour</label>
+      <label class="form-lbl">Colour dot (optional)</label>
       <div class="color-grid" id="edit-bag-color-grid"></div>
+      <div style="font-size:12px;color:var(--text3);margin-top:6px;line-height:1.4;">A coloured dot on the bag card helps you spot similar-looking bags.</div>
     </div>
     <div class="form-group">
       <label class="form-lbl">Folder (optional)</label>
@@ -1329,21 +1343,22 @@ input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(
 <!-- PRO UPGRADE SHEET -->
 <div class="pro-sheet" id="pro-sheet">
   <div class="pro-sheet-handle"></div>
-  <div class="pro-sheet-title">Unlock BagTag Pro</div>
-  <div class="pro-sheet-sub">Everything in Free, plus the features that matter most</div>
+  <div class="pro-sheet-title">Choose your BagTag plan</div>
+  <div class="pro-sheet-sub">Basic gives you more bags. Pro adds the team and smart features.</div>
   <ul class="pro-feature-list">
-    <li><span class="icon">🧳</span><div><strong>Unlimited bags</strong><small>Free trial: up to 10 bags · Pro: unlimited</small></div></li>
-    <li><span class="icon">👥</span><div><strong>Team Sharing</strong><small>Up to 10 members · Owner, Editor &amp; Viewer roles</small></div></li>
-    <li><span class="icon">📦</span><div><strong>Barcode Auto-fill</strong><small>UPC / EAN · Auto-fill product name &amp; details</small></div></li>
-    <li><span class="icon">🔔</span><div><strong>Expiry Reminders</strong><small>Warranties, AMC, batch expiry &amp; more</small></div></li>
-    <li><span class="icon">📊</span><div><strong>Advanced Summary &amp; Export</strong><small>PDF export with full item details</small></div></li>
+    <li><span class="icon">🧳</span><div><strong>More bags</strong><small>Free trial: 10 bags for 15 days · Basic: up to 50 bags · Pro: up to 150 bags</small></div></li>
+    <li><span class="icon">👥</span><div><strong>Team Sharing (Pro)</strong><small>Up to 10 members · Owner, Editor &amp; Viewer roles</small></div></li>
+    <li><span class="icon">📷</span><div><strong>Photo to items (Pro)</strong><small>Snap an open box and get the item list automatically</small></div></li>
+    <li><span class="icon">📦</span><div><strong>Barcode Auto-fill (Pro)</strong><small>UPC / EAN · Auto-fill product name &amp; details</small></div></li>
+    <li><span class="icon">🔔</span><div><strong>Expiry Reminders (Pro)</strong><small>Warranties, AMC, batch expiry &amp; more</small></div></li>
+    <li><span class="icon">📊</span><div><strong>Advanced Summary &amp; Export (Pro)</strong><small>PDF export with full item details</small></div></li>
   </ul>
   <div class="pro-price-row">
     <div class="pro-price-per" style="font-size:13px;">Affordable pricing &nbsp;·&nbsp; Cancel anytime</div>
   </div>
-  <div style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:14px;line-height:1.5;">Pro is activated by our team — reach out and we'll turn it on instantly once your payment is confirmed.</div>
-  <a class="pro-cta" id="btn-pro-whatsapp" href="https://wa.me/919321289734?text=Hi%2C%20I%27d%20like%20to%20upgrade%20to%20BagTag%20Pro" target="_blank" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">📱 Contact us on WhatsApp</a>
-  <a class="pro-cta" id="btn-pro-email" href="mailto:bagtag2026@gmail.com?subject=BagTag%20Pro%20Upgrade" style="display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:8px;background:var(--surface);color:var(--accent);border:0.5px solid var(--accent);">✉️ bagtag2026@gmail.com</a>
+  <div style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:14px;line-height:1.5;">Your plan is activated by our team — reach out and we'll turn it on instantly once your payment is confirmed.</div>
+  <a class="pro-cta" id="btn-pro-whatsapp" href="https://wa.me/919321289734?text=Hi%2C%20I%27d%20like%20to%20choose%20a%20BagTag%20plan%20(Basic%20or%20Pro)" target="_blank" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">📱 Contact us on WhatsApp</a>
+  <a class="pro-cta" id="btn-pro-email" href="mailto:bagtag2026@gmail.com?subject=BagTag%20Plan%20(Basic%20or%20Pro)" style="display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:8px;background:var(--surface);color:var(--accent);border:0.5px solid var(--accent);">✉️ bagtag2026@gmail.com</a>
   <button class="pro-dismiss" id="btn-pro-dismiss">Maybe later</button>
 </div>
 
@@ -1386,10 +1401,10 @@ input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(
       <div class="tnc-section">
         <div class="tnc-section-title">⏱️ Free Trial &amp; Subscription</div>
         <ul>
-          <li>Every new account enjoys a <strong>free trial with up to 10 bags</strong> — no payment required</li>
+          <li>Every new account enjoys a <strong>15-day free trial with up to 10 bags</strong> — no payment required</li>
           <li>Trial accounts can add unlimited items within those 10 bags</li>
-          <li>A monthly subscription unlocks <strong>unlimited bags</strong> and all Pro features</li>
-          <li>If a subscription is not activated, your account will be restricted but your data will be safely retained on our servers until you reactivate or an admin deactivates the account</li>
+          <li>The <strong>Basic plan</strong> allows up to 50 bags. The <strong>Pro plan</strong> allows up to 150 bags and adds team sharing, photo to items, barcode auto-fill and reminders</li>
+          <li>When your trial ends, your account becomes view-only until you choose a plan. Your data is safely retained on our servers until you choose a plan or an admin deactivates the account</li>
         </ul>
       </div>
       <div class="tnc-section">
@@ -1496,6 +1511,8 @@ const ADMIN_EMAIL = 'bagtag2026@gmail.com';
 
 // ── CONSTANTS ──
 const TRIAL_BAG_LIMIT = 10;
+const PLAN_LIMITS = {trial:10, free:10, restricted:10, basic:50, pro:150};
+const TRIAL_DAYS = 15;
 const KEY = 'bagtag_v3';
 
 // ── COLOURS ──
@@ -1544,12 +1561,19 @@ window.__pickIcon = function(e, pickerId, emoji) { e.stopPropagation(); const pk
 
 // ── COLOR PICKER ENGINE ──
 window.__colorCallbacks = {};
-function buildColorPicker(containerId, currentColor, onChange) {
+function buildColorPicker(containerId, currentColor, onChange, allowNone) {
   const el = document.getElementById(containerId); if(!el) return;
-  el.innerHTML = COLORS_PALETTE.map(c => `<div class="color-swatch ${c.hex===currentColor?'selected':''}" style="background:${c.hex};" title="${c.name}" onclick="__pickColor(event,'${containerId}','${c.hex}')"></div>`).join('');
+  const none = allowNone ? `<div class="color-swatch none ${!currentColor?'selected':''}" title="No colour" onclick="__pickColor(event,'${containerId}','')"></div>` : '';
+  el.innerHTML = none + COLORS_PALETTE.map(c => `<div class="color-swatch ${c.hex===currentColor?'selected':''}" style="background:${c.hex};" title="${c.name}" onclick="__pickColor(event,'${containerId}','${c.hex}')"></div>`).join('');
   window.__colorCallbacks[containerId] = onChange;
 }
-window.__pickColor = function(e, cId, hex) { e.stopPropagation(); window.__colorCallbacks[cId]?.(hex); document.querySelectorAll(`#${cId} .color-swatch`).forEach(sw=>sw.classList.toggle('selected', sw.style.background===hex||sw.style.background===_hexToRgb(hex))); };
+window.__pickColor = function(e, cId, hex) {
+  e.stopPropagation(); window.__colorCallbacks[cId]?.(hex);
+  document.querySelectorAll(`#${cId} .color-swatch`).forEach(sw=>{
+    const isNone = sw.classList.contains('none');
+    sw.classList.toggle('selected', hex==='' ? isNone : (!isNone && (sw.style.background===hex || sw.style.background===_hexToRgb(hex))));
+  });
+};
 function _hexToRgb(hex) { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgb(${r}, ${g}, ${b})`; }
 
 // ── DATA ──
@@ -1597,7 +1621,15 @@ function go(id) {
     else{document.querySelectorAll('.fab').forEach(f=>f.style.display='none');}
   } else { document.querySelectorAll('.fab').forEach(f=>f.style.display='none'); }
 }
-function canEdit(){return (window.activeRole||'owner')!=='viewer';}
+function canEdit(){return (window.activeRole||'owner')!=='viewer' && !isLocked();}
+function denyEdit(action){
+  if(isLocked()){
+    showProSheet('locked');
+    toast(planName()==='restricted' ? '🔒 Account restricted. Choose a plan to continue.' : '🔒 Your free trial has ended. Choose Basic or Pro to continue.');
+    return;
+  }
+  toast(`🔒 Viewers can't ${action}`);
+}
 function thumb(item) {
   if(item.mediaUrl){if(item.mediaType==='video')return`<video src="${item.mediaUrl}" muted style="width:100%;height:100%;object-fit:cover"></video>`;return`<img src="${item.mediaUrl}" style="width:100%;height:100%;object-fit:cover"/>`;}
   if(!item.mediaData) return '<span style="font-size:26px">🏷️</span>';
@@ -1608,18 +1640,26 @@ function getFolderForBag(bagId){return db.folders.find(f=>f.bags&&f.bags.include
 
 // ── TRIAL / BAG LIMIT ──
 function getTotalBags() { return db.bags.length; }
-function isAtBagLimit() { if(isPro()) return false; return getTotalBags() >= TRIAL_BAG_LIMIT; }
+function isAtBagLimit() { return getTotalBags() >= bagLimit(); }
 function updateTrialBanner() {
-  const banner = document.getElementById('trial-banner');
-  const used = document.getElementById('trial-bags-used');
-  if(!banner) return;
-  if(!isPro()) {
-    const count = getTotalBags();
-    banner.style.display = '';
-    if(used) used.textContent = count;
+  const banner = document.getElementById('trial-banner'); if(!banner) return;
+  const tEl = document.getElementById('trial-banner-title'), sEl = document.getElementById('trial-banner-sub');
+  const p = planName(), n = getTotalBags(), lim = bagLimit();
+  let title = '', sub = '';
+  if(userPlan.ownerUnknown || p === 'pro'){ banner.style.display = 'none'; return; }
+  if(isLocked()){
+    title = p === 'restricted' ? '🔒 Account restricted' : '🔒 Your free trial has ended';
+    sub = 'You can still view your bags and scan QR codes. Choose Basic or Pro to keep adding.';
+  } else if(p === 'basic'){
+    if(n < lim - 5){ banner.style.display = 'none'; return; }
+    title = `⭐ Basic: ${n}/${lim} bags used`;
+    sub = `Upgrade to Pro for up to ${PLAN_LIMITS.pro} bags and team features`;
   } else {
-    banner.style.display = 'none';
+    const d = trialDaysLeft();
+    title = `⏳ Trial: ${n}/${lim} bags used` + (d !== null ? ` · ${d} day${d === 1 ? '' : 's'} left` : '');
+    sub = 'Choose Basic or Pro to keep going after your trial';
   }
+  tEl.textContent = title; sEl.textContent = sub; banner.style.display = '';
 }
 
 // ── FLAG TOGGLES ──
@@ -1768,7 +1808,7 @@ function doSearch(q){
   html+=`<div class="search-results-lbl">Search results (${totalCount})</div>`;
   hits.forEach(({bag,bagMatch,items})=>{
     const folder=getFolderForBag(bag.id);
-    if(bagMatch){html+=`<div class="bag-card" onclick="openBag('${bag.id}');clearSearch()"><div class="bag-emo">${bag.emoji||'🧳'}</div><div class="bag-meta"><div class="bag-name">${esc(bag.name)}</div><div class="bag-sub">${folder?'📁 '+esc(folder.name)+' · ':''}${bag.items.length} items${bag.location?' · 📍'+esc(bag.location):''}</div></div></div>`;}
+    if(bagMatch){html+=`<div class="bag-card" onclick="openBag('${bag.id}');clearSearch()">${bagIconHtml(bag)}<div class="bag-meta"><div class="bag-name">${esc(bag.name)}</div><div class="bag-sub">${folder?'📁 '+esc(folder.name)+' · ':''}${bag.items.length} items${bag.location?' · 📍'+esc(bag.location):''}</div></div></div>`;}
     if(items.length){html+=`<div class="search-hit-bag">${bag.emoji||'🧳'} ${esc(bag.name)}</div>`;items.forEach(item=>{html+=`<div class="item-card" onclick="openBag('${bag.id}');clearSearch()" style="cursor:pointer"><div class="item-thumb">${thumb(item)}</div><div class="item-body"><div class="item-name">${esc(item.name)}</div>${item.note?`<div class="item-note">${esc(item.note)}</div>`:''}</div></div>`;});}
   });
   if(noteHits.length){
@@ -1872,8 +1912,8 @@ async function syncFromCloud(){
   try{
     const[fr,br,ir]=await Promise.all([sb.from('folders').select('*').order('created_at'),sb.from('bags').select('*').order('created_at'),sb.from('items').select('*').order('created_at')]);
     const folders=(fr.data||[]).map(f=>({id:f.id,cloudId:f.id,name:f.name,emoji:f.icon||'📁',color:f.colour||1,bags:(br.data||[]).filter(b=>b.folder_id===f.id).map(b=>b.qr_id||b.id)}));
-    const bags=(br.data||[]).map(b=>({id:b.qr_id||b.id,cloudId:b.id,name:b.name,emoji:b.icon||'🧳',location:b.location||'',refPath:b.reference_photo_path||null,items:(ir.data||[]).filter(i=>i.bag_id===b.id).map(i=>({id:i.id,cloudId:i.id,name:i.name,note:i.notes||'',qty:i.quantity||1,flag:i.flag||null,mediaPath:i.media_path||null,mediaType:i.media_type||null,mediaData:null,mediaUrl:null}))}));
-    db={folders,bags}; save(); loadMediaUrls();
+    const bags=(br.data||[]).map(b=>({id:b.qr_id||b.id,cloudId:b.id,name:b.name,emoji:b.icon||'🧳',location:b.location||'',refPath:b.reference_photo_path||null,colorHex:b.colour_hex||null,items:(ir.data||[]).filter(i=>i.bag_id===b.id).map(i=>({id:i.id,cloudId:i.id,name:i.name,note:i.notes||'',qty:i.quantity||1,flag:i.flag||null,mediaPath:i.media_path||null,mediaType:i.media_type||null,mediaData:null,mediaUrl:null}))}));
+    db={folders,bags}; save(); loadMediaUrls(); loadBagPhotoUrls();
   }catch(e){console.error('Sync error',e);toast('Could not sync — showing local data');}
 }
 async function loadMediaUrls(){
@@ -1898,11 +1938,16 @@ async function cloudSaveBag(b,folderId){
   if(!currentUser) return;
   try{
     const folder=folderId?db.folders.find(f=>f.id===folderId):null;const cloudFolderId=folder?folder.cloudId||null:null;
+    const isColourErr=e=>e&&/colour_hex/i.test(e.message||'');
     if(b.cloudId){
-      const{error}=await sb.from('bags').update({name:b.name,icon:b.emoji,folder_id:cloudFolderId,location:b.location||null}).eq('id',b.cloudId);
+      const fields={name:b.name,icon:b.emoji,folder_id:cloudFolderId,location:b.location||null,colour_hex:b.colorHex||null};
+      let {error}=await sb.from('bags').update(fields).eq('id',b.cloudId);
+      if(isColourErr(error)){delete fields.colour_hex;({error}=await sb.from('bags').update(fields).eq('id',b.cloudId));}
       if(error){console.error(error);toast('⚠️ Cloud save failed: '+error.message);}
     }else{
-      const{data,error}=await sb.from('bags').insert({name:b.name,icon:b.emoji,folder_id:cloudFolderId,qr_id:b.id,location:b.location||null,user_id:window.activeOwnerId||currentUser.id}).select('id').single();
+      const fields={name:b.name,icon:b.emoji,folder_id:cloudFolderId,qr_id:b.id,location:b.location||null,colour_hex:b.colorHex||null,user_id:window.activeOwnerId||currentUser.id};
+      let {data,error}=await sb.from('bags').insert(fields).select('id').single();
+      if(isColourErr(error)){delete fields.colour_hex;({data,error}=await sb.from('bags').insert(fields).select('id').single());}
       if(!error){b.cloudId=data.id;save();}else{console.error(error);toast('⚠️ Cloud save failed: '+error.message);}
     }
   }catch(e){console.error(e);toast('⚠️ Cloud save failed: '+e.message);}
@@ -1995,7 +2040,7 @@ function renderHome(){
     le.style.display='none';
     ll.innerHTML=looseBags.map(b=>`
       <div class="bag-card" draggable="true" ondragstart="dragStart(event,'bag','${b.id}')" ondragend="dragEnd()" onclick="openBag('${b.id}')">
-        <div class="bag-emo">${b.emoji||'🧳'}</div>
+        ${bagIconHtml(b)}
         <div class="bag-meta"><div class="bag-name">${esc(b.name)}</div><div class="bag-sub">${b.items.length} item${b.items.length===1?'':'s'}${b.location?' · 📍'+esc(b.location):''}</div></div>
         <div class="card-actions">
           <button class="edit-btn" title="Move to…" onclick="event.stopPropagation();openMovePicker('bag','${b.id}')">⇄</button>
@@ -2147,7 +2192,7 @@ function renderFolderBags(){
     empty.style.display='none';
     list.innerHTML=bags.map(b=>`
       <div class="bag-card" draggable="true" ondragstart="dragStart(event,'bag','${b.id}')" ondragend="dragEnd()" onclick="openBag('${b.id}')">
-        <div class="bag-emo">${b.emoji||'🧳'}</div>
+        ${bagIconHtml(b)}
         <div class="bag-meta"><div class="bag-name">${esc(b.name)}</div><div class="bag-sub">${b.items.length} item${b.items.length===1?'':'s'}${b.location?' · 📍'+esc(b.location):''}</div></div>
         <div class="card-actions">
           <button class="edit-btn" title="Move to…" onclick="event.stopPropagation();openMovePicker('bag','${b.id}')">⇄</button>
@@ -2158,12 +2203,12 @@ function renderFolderBags(){
   }
 }
 function delFolder(id){
-  if(!canEdit()){toast('🔒 Viewers can\'t delete folders');return;}
+  if(!canEdit()){denyEdit('delete folders');return;}
   if(!confirm('Delete this folder? Bags inside will move to "No folder".')) return;
   const f=db.folders.find(x=>x.id===id); db.folders=db.folders.filter(x=>x.id!==id); save(); renderHome(); toast('Folder deleted'); cloudDeleteFolder(f);
 }
 function showAddFolder(editId=null){
-  if(!canEdit()){toast('🔒 Viewers can\'t add or edit folders');return;}
+  if(!canEdit()){denyEdit('add or edit folders');return;}
   editFolderId=editId;
   selFolderEmoji=editId?(db.folders.find(x=>x.id===editId)?.emoji||'📁'):'📁';
   selFolderColor=editId?(db.folders.find(x=>x.id===editId)?.colorHex||COLORS_PALETTE[0].hex):COLORS_PALETTE[0].hex;
@@ -2198,28 +2243,28 @@ function openBag(id){
   setTab('items'); renderItems(); renderRefPhoto(); go('bag-detail');
 }
 function delBag(id){
-  if(!canEdit()){toast('🔒 Viewers can\'t delete bags');return;}
+  if(!canEdit()){denyEdit('delete bags');return;}
   if(!confirm('Delete this bag and all contents?')) return;
   const b=db.bags.find(x=>x.id===id); db.bags=db.bags.filter(x=>x.id!==id);
   db.folders.forEach(f=>{if(f.bags)f.bags=f.bags.filter(bid=>bid!==id);}); save(); renderHome(); toast('Bag deleted'); if(b&&b.refPath){sb.storage.from('media').remove([b.refPath]).catch(()=>{});} cloudDeleteBag(b);
   if(document.getElementById('screen-bag-detail').classList.contains('active')){const folder=getFolderForBag(id);if(folder){renderFolderBags();go('folder-detail');}else{renderHome();go('home');}}
 }
 function showAddBag(folderId=null){
-  if(!canEdit()){toast('🔒 Viewers can\'t add bags');return;}
-  if(isAtBagLimit()){showProSheet('trial');toast(`Trial limit: ${TRIAL_BAG_LIMIT} bags max. Upgrade for unlimited!`);return;}
-  addBagFromFolder=folderId; selBagEmoji='🧳'; selBagColor=COLORS_PALETTE[0].hex;
+  if(!canEdit()){denyEdit('add bags');return;}
+  if(isAtBagLimit()){showProSheet('trial');toast(`Bag limit reached (${bagLimit()} on your plan). Upgrade to add more.`);return;}
+  addBagFromFolder=folderId; selBagEmoji='🧳'; selBagColor='';
   document.getElementById('inp-bag-name').value='';
   document.getElementById('inp-bag-location').value='';
   const sel=document.getElementById('inp-bag-folder');
   sel.innerHTML='<option value="">— No folder —</option>';
   db.folders.forEach(f=>{const opt=document.createElement('option');opt.value=f.id;opt.textContent=(f.emoji||'📁')+' '+f.name;if(f.id===folderId)opt.selected=true;sel.appendChild(opt);});
   buildIconPicker('bag-icon-tabs','bag-icon-picker',BAG_ICON_CATS,selBagEmoji,e=>{selBagEmoji=e;});
-  buildColorPicker('bag-color-grid',selBagColor,c=>{selBagColor=c;});
+  buildColorPicker('bag-color-grid',selBagColor,c=>{selBagColor=c;},true);
   go('add-bag'); setTimeout(()=>document.getElementById('inp-bag-name').focus(),300);
 }
 function showEditBag(bagId){
   curEditBagId=bagId; const b=db.bags.find(x=>x.id===bagId); if(!b) return;
-  selEditBagEmoji=b.emoji||'🧳'; selEditBagColor=b.colorHex||COLORS_PALETTE[0].hex;
+  selEditBagEmoji=b.emoji||'🧳'; selEditBagColor=b.colorHex||'';
   document.getElementById('edit-bag-name').value=b.name;
   document.getElementById('edit-bag-location').value=b.location||'';
   const sel=document.getElementById('edit-bag-folder');
@@ -2227,7 +2272,7 @@ function showEditBag(bagId){
   const currentFolder=db.folders.find(f=>f.bags&&f.bags.includes(bagId));
   db.folders.forEach(f=>{const opt=document.createElement('option');opt.value=f.id;opt.textContent=(f.emoji||'📁')+' '+f.name;if(currentFolder&&f.id===currentFolder.id)opt.selected=true;sel.appendChild(opt);});
   buildIconPicker('edit-bag-icon-tabs','edit-bag-icon-picker',BAG_ICON_CATS,selEditBagEmoji,e=>{selEditBagEmoji=e;});
-  buildColorPicker('edit-bag-color-grid',selEditBagColor,c=>{selEditBagColor=c;});
+  buildColorPicker('edit-bag-color-grid',selEditBagColor,c=>{selEditBagColor=c;},true);
   go('edit-bag'); setTimeout(()=>document.getElementById('edit-bag-name').focus(),300);
 }
 document.getElementById('back-edit-bag').addEventListener('click',()=>{const f=db.folders.find(f=>f.bags&&f.bags.includes(curEditBagId));if(f){renderFolderBags();go('folder-detail');}else{renderHome();go('home');}});
@@ -2239,7 +2284,7 @@ document.getElementById('btn-save-edit-bag').addEventListener('click',async()=>{
   const b=db.bags.find(x=>x.id===curEditBagId); if(!b){toast('Bag not found');return;}
   db.folders.forEach(f=>{if(f.bags)f.bags=f.bags.filter(bid=>bid!==curEditBagId);});
   if(newFolderId){const f=db.folders.find(x=>x.id===newFolderId);if(f){if(!f.bags)f.bags=[];f.bags.push(curEditBagId);}}
-  b.name=name; b.emoji=selEditBagEmoji; b.colorHex=selEditBagColor; b.location=location; save();
+  b.name=name; b.emoji=selEditBagEmoji; b.colorHex=selEditBagColor||null; b.location=location; save();
   toast('Bag updated!'); await cloudSaveBag(b,newFolderId); db.folders.forEach(f=>cloudSaveFolder(f));
   if(newFolderId){curFolder=newFolderId;renderFolderBags();go('folder-detail');}else{renderHome();go('home');}
 });
@@ -2253,7 +2298,7 @@ document.getElementById('btn-create-bag').addEventListener('click',async()=>{
   if(isAtBagLimit()){showProSheet('trial');return;}
   const location=document.getElementById('inp-bag-location').value.trim();
   const folderId=document.getElementById('inp-bag-folder').value||null;
-  const b={id:uid(),name,emoji:selBagEmoji,colorHex:selBagColor,location,items:[]};
+  const b={id:uid(),name,emoji:selBagEmoji,colorHex:selBagColor||null,location,items:[]};
   db.bags.push(b);
   if(folderId){const f=db.folders.find(x=>x.id===folderId);if(f){if(!f.bags)f.bags=[];f.bags.push(b.id);}}
   save(); if(folderId){renderFolderBags();go('folder-detail');}else{renderHome();go('home');} toast('Bag created ✅');
@@ -2291,7 +2336,7 @@ function renderItems(){
   }
 }
 function delItem(id){
-  if(!canEdit()){toast('🔒 Viewers can\'t delete items');return;}
+  if(!canEdit()){denyEdit('delete items');return;}
   const bag=db.bags.find(b=>b.id===curBag); const item=bag.items.find(i=>i.id===id);
   bag.items=bag.items.filter(i=>i.id!==id); save(); renderItems(); renderHome(); toast('Item removed');
   cloudDeleteItem(item);
@@ -2299,7 +2344,7 @@ function delItem(id){
 
 // ── EDIT ITEM ──
 function openEditItem(itemId){
-  if(!canEdit()){toast('🔒 Viewers can\'t edit items');return;}
+  if(!canEdit()){denyEdit('edit items');return;}
   const bag=db.bags.find(b=>b.id===curBag); const item=bag.items.find(i=>i.id===itemId); if(!item) return;
   curEditItemId=itemId; editMedia={data:null,type:null,file:null,removed:false};
   editItemFlag=item.flag||null;
@@ -2381,7 +2426,7 @@ document.getElementById('back-bag-detail').addEventListener('click',()=>{const f
 
 // ── ADD ITEM ──
 document.getElementById('btn-add-item').addEventListener('click',()=>{
-  if(!canEdit()){toast('🔒 Viewers can\'t add items');return;}
+  if(!canEdit()){denyEdit('add items');return;}
   addItemFlag=null; media={data:null,type:null,file:null,files:[]};
   document.getElementById('inp-item-name').value=window.pendingBarcodeItem||'';
   window.pendingBarcodeItem=null;
@@ -2607,7 +2652,7 @@ function viewBag(bag){
   const hdr=document.getElementById('view-hdr'); hdr.style.background=col?col.bg:'var(--surface)';
   const ft=document.getElementById('view-folder-tag');
   if(folder){ft.style.display='';ft.style.background=col.bg;ft.style.color=col.hex;ft.textContent=(folder.emoji||'📁')+' '+folder.name;}else ft.style.display='none';
-  document.getElementById('view-emo').textContent=bag.emoji||'🧳';
+  document.getElementById('view-emo').innerHTML=bagHeaderIconHtml(bag);
   document.getElementById('view-name').textContent=bag.name;
   document.getElementById('view-cnt').textContent=bag.items.length+' item'+(bag.items.length!==1?'s':'');
   const viewLoc=document.getElementById('view-location'); const viewLocTxt=document.getElementById('view-location-text');
@@ -2627,14 +2672,44 @@ document.getElementById('back-view-bag').addEventListener('click',startScan);
 // ── PRO / FREEMIUM ──
 async function fetchProStatus(){
   if(!currentUser) return;
+  const own = currentUser.id, owner = window.activeOwnerId || own;
+  const load = async id => {
+    const {data, error} = await sb.from('user_pro_status').select('plan,is_pro,trial_days_left,trial_ends').eq('id', id).maybeSingle();
+    if(error) throw error;
+    return data;
+  };
   try{
-    const{data,error}=await sb.from('user_pro_status').select('plan,is_pro,trial_days_left,trial_ends').eq('id',currentUser.id).single();
-    if(!error&&data){userPlan=data;localStorage.setItem('bagtag_plan',data.plan);updatePlanUI();}
+    let data = null, ownerUnknown = false;
+    if(owner !== own){
+      // team member: the workspace follows the owner's plan
+      try{ data = await load(owner); }catch(e){}
+      if(!data) ownerUnknown = true;
+    }
+    if(ownerUnknown){
+      userPlan = {plan:'pro', is_pro:false, trial_days_left:0, trial_ends:null, ownerUnknown:true};
+    } else {
+      if(!data) data = await load(own);
+      if(data){ userPlan = data; localStorage.setItem('bagtag_plan', data.plan); }
+    }
   }catch(e){const cached=localStorage.getItem('bagtag_plan');if(cached)userPlan.plan=cached;}
+  applyPlanState();
 }
-function isPro(){
-  if(currentUser && currentUser.email && currentUser.email.toLowerCase()===ADMIN_EMAIL.toLowerCase()) return true;
-  const plan=userPlan.plan||localStorage.getItem('bagtag_plan')||'free';return userPlan.is_pro===true||plan==='pro'||plan==='trial';
+function planName(){
+  if(currentUser && currentUser.email && currentUser.email.toLowerCase()===ADMIN_EMAIL.toLowerCase()) return 'pro';
+  if(userPlan.is_pro===true) return 'pro';
+  return userPlan.plan || localStorage.getItem('bagtag_plan') || 'free';
+}
+function trialEndMs(){const t=userPlan.trial_ends;if(!t) return null;const ms=new Date(t).getTime();return isNaN(ms)?null:ms;}
+function trialDaysLeft(){const e=trialEndMs();return e===null?null:Math.max(0,Math.ceil((e-Date.now())/86400000));}
+function isTrialExpired(){const e=trialEndMs();return planName()==='trial' && e!==null && Date.now()>e;}
+// locked = trial ended or account restricted: view-only, nothing can be added or edited
+function isLocked(){ if(userPlan.ownerUnknown) return false; const p=planName(); return p==='restricted' || isTrialExpired(); }
+// "isPro" means: has the Pro features (Pro plan, or an active free trial)
+function isPro(){ if(isLocked()) return false; const p=planName(); return p==='pro' || p==='trial'; }
+function bagLimit(){ if(userPlan.ownerUnknown) return Infinity; const p=planName(); return PLAN_LIMITS[p]!==undefined ? PLAN_LIMITS[p] : TRIAL_BAG_LIMIT; }
+function applyPlanState(){
+  document.body.classList.toggle('plan-locked', isLocked());
+  updatePlanUI(); updateTrialBanner(); refreshProScreens();
 }
 async function activatePro(){
   if(currentUser){await sb.from('user_profiles').update({is_pro:true,pro_since:new Date().toISOString()}).eq('id',currentUser.id);await fetchProStatus();}
@@ -2643,10 +2718,15 @@ async function activatePro(){
 function updatePlanUI(){
   const badge=document.getElementById('acct-plan-badge'),sub=document.getElementById('acct-plan-sub'),upgBtn=document.getElementById('btn-upgrade-from-acct');
   if(!badge) return;
-  const plan=userPlan.plan||'free'; const days=userPlan.trial_days_left||0;
-  if(plan==='pro'){badge.textContent='✨ BagTag Pro';badge.style.background='linear-gradient(135deg,#00BCD4,#3D5AFE,#9C27B0)';badge.style.color='white';sub.textContent='Unlimited bags & all Pro features. Thank you!';upgBtn.style.display='none';}
-  else if(plan==='trial'){badge.textContent=`⏳ Free Trial`;badge.style.background='#FFF3CD';badge.style.color='#B45309';sub.textContent=`Using ${getTotalBags()} of ${TRIAL_BAG_LIMIT} free bags.`;upgBtn.style.display='';}
-  else{badge.textContent='🔒 Free Plan';badge.style.background='var(--surface2)';badge.style.color='var(--text3)';sub.textContent=`Using ${getTotalBags()} of ${TRIAL_BAG_LIMIT} free bags.`;upgBtn.style.display='';}
+  const p=planName(), n=getTotalBags(), lim=bagLimit(), d=trialDaysLeft();
+  const set=(t,bg,col,txt,showUpg)=>{badge.textContent=t;badge.style.background=bg;badge.style.color=col;sub.textContent=txt;upgBtn.style.display=showUpg?'':'none';};
+  const GRAD='linear-gradient(135deg,#00BCD4,#3D5AFE,#9C27B0)';
+  if(userPlan.ownerUnknown) set('👥 Team workspace','var(--surface2)','var(--text2)',`You are using your team owner's plan.`,false);
+  else if(isLocked()) set(p==='restricted'?'🔒 Restricted':'🔒 Trial ended','var(--red-lt)','var(--red)',`View-only. ${n} bag${n===1?'':'s'} saved. Choose Basic or Pro to continue.`,true);
+  else if(p==='pro') set('✨ BagTag Pro',GRAD,'white',`Up to ${PLAN_LIMITS.pro} bags & all Pro features. Thank you!`,false);
+  else if(p==='basic') set('⭐ BagTag Basic','var(--success-lt)','var(--success)',`Using ${n} of ${lim} bags. Upgrade to Pro for ${PLAN_LIMITS.pro} bags & team features.`,true);
+  else if(p==='trial') set('⏳ Free Trial','#FFF3CD','#B45309',`Using ${n} of ${lim} bags`+(d!==null?` · ${d} day${d===1?'':'s'} left`:'')+'.',true);
+  else set('🔒 Free Plan','var(--surface2)','var(--text3)',`Using ${n} of ${lim} bags.`,true);
 }
 document.getElementById('btn-upgrade-from-acct').addEventListener('click',()=>{document.getElementById('acct-sheet').classList.remove('open');showProSheet('account');});
 function showProSheet(feature){document.getElementById('pro-sheet').classList.add('open');}
@@ -2824,17 +2904,20 @@ function renderAdminUsers(profiles){
   if(!profiles.length){listEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">No users found.</div>';return;}
   listEl.innerHTML=profiles.map(p=>{
     const off=p.is_active===false;
-    const plan=off?'deactivated':(p.is_pro?'pro':(p.plan||'trial'));
+    const ended=p.plan==='trial'&&!p.is_pro&&p.trial_ends&&new Date(p.trial_ends)<new Date();
+    const plan=off?'deactivated':(p.is_pro?'pro':(ended?'restricted':(p.plan||'trial')));
+    const planLabel=off?'deactivated':(ended?'trial ended':plan);
     const created=p.created_at?new Date(p.created_at).toLocaleDateString('en-IN'):'—';
     const mine=currentUser&&p.id===currentUser.id;
     return`<div class="admin-user-card">
       <div style="display:flex;align-items:center;gap:8px;">
         <div class="admin-user-email">${esc(p.email||p.id||'Unknown')}</div>
-        <span class="plan-chip ${plan}">${plan}</span>
+        <span class="plan-chip ${plan}">${planLabel}</span>
       </div>
-      <div class="admin-user-meta">Joined: ${created}</div>
+      <div class="admin-user-meta">Joined: ${created}${p.plan==='trial'&&!p.is_pro&&p.trial_ends?' · Trial ends: '+new Date(p.trial_ends).toLocaleDateString('en-IN'):''}</div>
       <div class="admin-user-actions">
         <button class="admin-action-btn extend" onclick="adminExtendTrial('${p.id}')">⏳ Extend trial</button>
+        <button class="admin-action-btn activate" onclick="adminActivateBasic('${p.id}')">⭐ Activate Basic</button>
         <button class="admin-action-btn activate" onclick="adminActivatePro('${p.id}')">✨ Activate Pro</button>
         <button class="admin-action-btn revoke" onclick="adminRevokeAccess('${p.id}')">🔒 Restrict</button>
       </div>
@@ -2850,7 +2933,8 @@ async function adminDo(body,okMsg){
 }
 window.adminExtendTrial=function(id){if(confirm('Extend this user\'s trial by 7 days?')) adminDo({action:'extend_trial',target_user_id:id},'✅ Trial extended by 7 days');};
 window.adminActivatePro=function(id){if(confirm('Activate Pro for this user?')) adminDo({action:'activate_pro',target_user_id:id},'✅ Pro activated');};
-window.adminRevokeAccess=function(id){if(confirm('Restrict this account? The user will lose Pro access.')) adminDo({action:'restrict',target_user_id:id},'🔒 Account restricted');};
+window.adminActivateBasic=function(id){if(confirm('Activate Basic for this user?')) adminDo({action:'activate_basic',target_user_id:id},'✅ Basic activated');};
+window.adminRevokeAccess=function(id){if(confirm('Restrict this account? The user will become view-only.')) adminDo({action:'restrict',target_user_id:id},'🔒 Account restricted');};
 window.adminDeactivate=function(id){
   if(!confirm('Deactivate this account? The user will be blocked from signing in.')) return;
   const reason=prompt('Reason (optional)','')||undefined;
@@ -2920,7 +3004,7 @@ function mvTargets(kind,id){
   return db.bags.filter(b=>!from||b.id!==from.id).map(b=>({id:b.id,name:b.name,sub:'in '+mvFolderName(b.id)}));
 }
 function openMovePicker(kind,id){
-  if(!canEdit()){toast('🔒 Viewers can\'t move things');return;}
+  if(!canEdit()){denyEdit('move things');return;}
   const t=mvTargets(kind,id);
   const list=t.length?t.map(x=>`<button class="mv-opt" data-tid="${x.id}" data-q="${esc((x.name+' '+x.sub).toLowerCase())}">${esc(x.name)}<small>${esc(x.sub)}</small></button>`).join(''):'<div class="mv-sub">There is nowhere else to move this yet.</div>';
   mvOpen(`<div class="mv-title">Move “${esc(mvSubjectName(kind,id))}” to…</div><input class="search-inp" id="mv-q" placeholder="Search" style="margin-bottom:10px;"/><div id="mv-list">${list}</div><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button></div>`);
@@ -2928,7 +3012,7 @@ function openMovePicker(kind,id){
   document.getElementById('mv-list').addEventListener('click',e=>{const b=e.target.closest('.mv-opt');if(b)requestMove(kind,id,b.dataset.tid);});
 }
 function requestMove(kind,id,tid){
-  if(!canEdit()){toast('🔒 Viewers can\'t move things');return;}
+  if(!canEdit()){denyEdit('move things');return;}
   const tgt=kind==='bag'?(tid?db.folders.find(f=>f.id===tid):{name:'No folder'}):db.bags.find(b=>b.id===tid);
   if(!tgt){toast('That destination no longer exists');return;}
   mvOpen(`<div class="mv-title">Do you want to move this?</div><div style="font-size:14px;color:var(--text2);line-height:1.5;">Move <b>${esc(mvSubjectName(kind,id))}</b> to <b>${esc(tgt.name)}</b>?</div><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button><button class="mv-yes" id="mv-yes">Yes, move</button></div>`);
@@ -2972,7 +3056,7 @@ async function performMove(kind,id,tid,opts){
   return rec;
 }
 async function undoRecord(rec){
-  if(!canEdit()){toast('🔒 Viewers can\'t move things');return;}
+  if(!canEdit()){denyEdit('move things');return;}
   if(rec.undone){toast('Already undone');return;}
   let subj=null,target='';
   if(rec.kind==='bag'){
@@ -3024,7 +3108,7 @@ var _phItems=[],_phBlob=null;
 function b64ToBlob(b64){const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:'image/jpeg'});}
 function openPhotoChooser(){
   if(!currentUser){toast('Please sign in first');return;}
-  if(!canEdit()){toast('🔒 Viewers can\'t add items');return;}
+  if(!canEdit()){denyEdit('add items');return;}
   if(!isPro()){toast('📷 Photo to items is a Pro feature. See Account to upgrade.');return;}
   mvOpen(`<div class="mv-title">Add items from a photo</div><div class="mv-sub" style="margin-bottom:12px;line-height:1.5;">Photograph the open box from above, with items spread out and good light. Please photograph items only, not people.</div><button class="mv-opt" id="ph-cam">📷 Take a photo</button><button class="mv-opt" id="ph-gal">🖼 Choose from gallery</button><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button></div>`);
   document.getElementById('ph-cam').onclick=()=>document.getElementById('photo-cam').click();
@@ -3102,31 +3186,111 @@ document.getElementById('btn-photo-items').addEventListener('click',openPhotoCho
 ['photo-cam','photo-gal'].forEach(id=>document.getElementById(id).addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';handlePhotoFile(f);}));
 
 // ── BAG REFERENCE PHOTO ──
+
+// ── BAG ICON (photo thumbnail + colour dot) ──
+function bagDotHtml(b){return b&&b.colorHex?`<span class="bag-dot" style="background:${b.colorHex}" aria-hidden="true"></span>`:'';}
+function bagIconHtml(b){
+  if(b&&b.refUrl) return `<div class="bag-emo has-photo"><img src="${b.refUrl}" alt="" loading="lazy" data-emo="${esc(b.emoji||'🧳')}" onerror="bagImgFail(this)">${bagDotHtml(b)}</div>`;
+  return `<div class="bag-emo">${b.emoji||'🧳'}${bagDotHtml(b)}</div>`;
+}
+function bagHeaderIconHtml(b){
+  const inner=b.refUrl?`<img src="${b.refUrl}" alt="" data-emo="${esc(b.emoji||'🧳')}" onerror="bagImgFail(this)" style="width:56px;height:56px;border-radius:14px;object-fit:cover;display:block;">`:esc(b.emoji||'🧳');
+  return `<span style="position:relative;display:inline-block;">${inner}${bagDotHtml(b)}</span>`;
+}
+function bagImgFail(img){
+  const p=img.parentNode; if(!p) return;
+  if(p.classList) p.classList.remove('has-photo');
+  p.insertBefore(document.createTextNode(img.dataset.emo||'🧳'),img); img.remove();
+}
+async function loadBagPhotoUrls(){
+  const need=db.bags.filter(b=>b.refPath&&!b.refUrl); if(!need.length) return;
+  try{
+    const{data,error}=await sb.storage.from('media').createSignedUrls(need.map(b=>b.refPath),3600);
+    if(error||!data) return;
+    const map={}; data.forEach(r=>{if(r&&r.signedUrl&&r.path) map[r.path]=r.signedUrl;});
+    need.forEach(b=>{if(map[b.refPath]) b.refUrl=map[b.refPath];});
+    refreshBagLists();
+  }catch(e){}
+}
+function refreshBagLists(){
+  const on=id=>{const el=document.getElementById(id);return el&&el.classList.contains('active');};
+  if(on('screen-home')) renderHome();
+  else if(on('screen-folder-detail')) renderFolderBags();
+}
+function resizeToBlob(file,max,q){
+  return new Promise((res,rej)=>{
+    const img=new Image(),url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const sc=Math.min(1,max/Math.max(img.width,img.height));
+      const w=Math.round(img.width*sc),h=Math.round(img.height*sc);
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
+      c.toBlob(bl=>bl?res(bl):rej(new Error('Could not process that photo')),'image/jpeg',q);
+    };
+    img.onerror=()=>rej(new Error('Could not read that photo'));
+    img.src=url;
+  });
+}
+function openBagPhotoChooser(){
+  if(!currentUser){toast('Please sign in first');return;}
+  if(!canEdit()){denyEdit('change bag photos');return;}
+  const b=db.bags.find(x=>x.id===curBag);
+  if(!b||!b.cloudId){toast('Please wait a moment, this bag is still syncing');return;}
+  mvOpen(`<div class="mv-title">Bag photo</div><div class="mv-sub" style="margin-bottom:12px;line-height:1.5;">Add a photo of the bag so it is easy to spot. Please photograph the bag only, not people.</div><button class="mv-opt" id="bp-cam">📷 Take a photo</button><button class="mv-opt" id="bp-gal">🖼️ Choose from gallery</button><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button></div>`);
+  document.getElementById('bp-cam').onclick=()=>document.getElementById('bagphoto-cam').click();
+  document.getElementById('bp-gal').onclick=()=>document.getElementById('bagphoto-gal').click();
+}
+async function handleBagPhotoFile(file){
+  if(!file) return;
+  const b=db.bags.find(x=>x.id===curBag);
+  if(!b||!b.cloudId||!canEdit()){mvClose();return;}
+  mvOpen('<div class="mv-title">Saving photo…</div><div class="mv-sub">Just a moment.</div>');
+  try{
+    const blob=await resizeToBlob(file,900,0.8);
+    const path=await uploadMedia(new File([blob],'bag.jpg',{type:'image/jpeg'}),curBag);
+    const{error}=await sb.from('bags').update({reference_photo_path:path}).eq('id',b.cloudId);
+    if(error){sb.storage.from('media').remove([path]).catch(()=>{});throw error;}
+    const old=b.refPath; b.refPath=path; b.refUrl=null;
+    if(old) sb.storage.from('media').remove([old]).catch(()=>{});
+    save(); mvClose(); toast('✅ Bag photo saved');
+    await renderRefPhoto(); loadBagPhotoUrls();
+  }catch(e){console.error(e);mvClose();toast('Could not save the photo: '+(e.message||'please try again'));}
+}
+['bagphoto-cam','bagphoto-gal'].forEach(id=>document.getElementById(id).addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';handleBagPhotoFile(f);}));
+
 async function renderRefPhoto(){
   const box=document.getElementById('bag-ref-photo');
   const b=db.bags.find(x=>x.id===curBag);
-  if(!b||!b.refPath){box.style.display='none';box.innerHTML='';return;}
+  if(!b){box.style.display='none';box.innerHTML='';return;}
+  const editor=canEdit();
+  if(!b.refPath){
+    if(!editor){box.style.display='none';box.innerHTML='';return;}
+    box.style.display='';
+    box.innerHTML=`<button class="mv-opt" onclick="openBagPhotoChooser()" style="margin-bottom:12px;">📷 Add a photo of this bag<small>Helps you tell similar bags apart at a glance</small></button>`;
+    return;
+  }
   box.style.display='';
   try{
     const{data,error}=await sb.storage.from('media').createSignedUrl(b.refPath,3600);
     if(error||!data) throw (error||new Error('no url'));
     b.refUrl=data.signedUrl;
-    box.innerHTML=`<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;padding:10px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rsm);"><img src="${data.signedUrl}" onclick="viewRefPhoto()" style="width:72px;height:72px;object-fit:cover;border-radius:10px;"/><div style="flex:1;font-size:13px;color:var(--text2);line-height:1.4;"><b style="color:var(--text);display:block;">Reference photo</b>How this box looks when complete. Tap to enlarge.</div></div>`;
+    const btnStyle='padding:6px 12px;border:1px solid var(--border2);border-radius:99px;background:var(--surface);color:var(--text);font-family:var(--font);font-size:12px;font-weight:600;';
+    box.innerHTML=`<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;padding:10px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rsm);"><img src="${data.signedUrl}" onclick="viewRefPhoto()" style="width:72px;height:72px;object-fit:cover;border-radius:10px;"/><div style="flex:1;font-size:13px;color:var(--text2);line-height:1.4;"><b style="color:var(--text);display:block;">Bag photo</b>Tap the photo to enlarge.${editor?`<div style="margin-top:8px;"><button onclick="openBagPhotoChooser()" style="${btnStyle}">Change photo</button></div>`:''}</div></div>`;
   }catch(e){box.style.display='none';}
 }
 function viewRefPhoto(){
   const b=db.bags.find(x=>x.id===curBag);if(!b||!b.refUrl) return;
-  mvOpen(`<div class="mv-title">Reference photo</div><img src="${b.refUrl}" style="width:100%;border-radius:12px;"/><div class="mv-row"><button class="mv-no" onclick="mvClose()">Close</button>${canEdit()?'<button class="mv-no" onclick="removeRefPhoto()">Remove</button>':''}</div>`);
+  mvOpen(`<div class="mv-title">Bag photo</div><img src="${b.refUrl}" style="width:100%;border-radius:12px;"/><div class="mv-row"><button class="mv-no" onclick="mvClose()">Close</button>${canEdit()?'<button class="mv-no" onclick="removeRefPhoto()">Remove</button>':''}</div>`);
 }
 async function removeRefPhoto(){
   const b=db.bags.find(x=>x.id===curBag);if(!b||!canEdit()) return;
-  if(!confirm('Remove the reference photo from this bag?')) return;
+  if(!confirm('Remove the photo from this bag?')) return;
   mvClose();
   try{
     const{error}=await sb.from('bags').update({reference_photo_path:null}).eq('id',b.cloudId);
     if(error) throw error;
     sb.storage.from('media').remove([b.refPath]).catch(()=>{});
-    b.refPath=null;b.refUrl=null;save();renderRefPhoto();toast('Reference photo removed');
+    b.refPath=null;b.refUrl=null;save();renderRefPhoto();refreshBagLists();toast('Bag photo removed');
   }catch(e){toast('Could not remove the photo');}
 }
 
