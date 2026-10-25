@@ -1346,7 +1346,7 @@ input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(
   <div class="pro-sheet-title">Choose your BagTag plan</div>
   <div class="pro-sheet-sub">Basic gives you more bags. Pro adds the team and smart features.</div>
   <ul class="pro-feature-list">
-    <li><span class="icon">🧳</span><div><strong>More bags</strong><small>Free trial: 10 bags for 15 days · Basic: up to 50 bags · Pro: up to 150 bags</small></div></li>
+    <li><span class="icon">🧳</span><div><strong>More bags</strong><small>Free trial: 10 bags for 7 days · Basic: up to 50 bags · Pro: up to 150 bags</small></div></li>
     <li><span class="icon">👥</span><div><strong>Team Sharing (Pro)</strong><small>Up to 10 members · Owner, Editor &amp; Viewer roles</small></div></li>
     <li><span class="icon">📷</span><div><strong>Photo to items (Pro)</strong><small>Snap an open box and get the item list automatically</small></div></li>
     <li><span class="icon">📦</span><div><strong>Barcode Auto-fill (Pro)</strong><small>UPC / EAN · Auto-fill product name &amp; details</small></div></li>
@@ -1401,7 +1401,7 @@ input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(
       <div class="tnc-section">
         <div class="tnc-section-title">⏱️ Free Trial &amp; Subscription</div>
         <ul>
-          <li>Every new account enjoys a <strong>15-day free trial with up to 10 bags</strong> — no payment required</li>
+          <li>Every new account enjoys a <strong>7-day free trial with up to 10 bags</strong> — no payment required</li>
           <li>Trial accounts can add unlimited items within those 10 bags</li>
           <li>The <strong>Basic plan</strong> allows up to 50 bags. The <strong>Pro plan</strong> allows up to 150 bags and adds team sharing, photo to items, barcode auto-fill and reminders</li>
           <li>When your trial ends, your account becomes view-only until you choose a plan. Your data is safely retained on our servers until you choose a plan or an admin deactivates the account</li>
@@ -1411,7 +1411,7 @@ input:-webkit-autofill,input:-webkit-autofill:focus{-webkit-text-fill-color:var(
         <div class="tnc-section-title">🔒 Your Data</div>
         <ul>
           <li>Your data is stored on secure encrypted cloud servers</li>
-          <li>Your information is private and is never sold or shared with anyone</li>
+          <li>Your information is private and is never sold. It is not shared with anyone, except that photos you choose to scan with Photo to items are sent to a third-party AI service (Google Gemini) to read the items, and that provider's own terms apply to how it handles them</li>
           <li>You can request deletion of your data anytime by writing to us at <strong>bagtag2026@gmail.com</strong></li>
         </ul>
       </div>
@@ -1512,7 +1512,7 @@ const ADMIN_EMAIL = 'bagtag2026@gmail.com';
 // ── CONSTANTS ──
 const TRIAL_BAG_LIMIT = 10;
 const PLAN_LIMITS = {trial:10, free:10, restricted:10, basic:50, pro:150};
-const TRIAL_DAYS = 15;
+const TRIAL_DAYS = 7;
 const KEY = 'bagtag_v3';
 
 // ── COLOURS ──
@@ -3110,7 +3110,7 @@ function openPhotoChooser(){
   if(!currentUser){toast('Please sign in first');return;}
   if(!canEdit()){denyEdit('add items');return;}
   if(!isPro()){toast('📷 Photo to items is a Pro feature. See Account to upgrade.');return;}
-  mvOpen(`<div class="mv-title">Add items from a photo</div><div class="mv-sub" style="margin-bottom:12px;line-height:1.5;">Photograph the open box from above, with items spread out and good light. Please photograph items only, not people.</div><button class="mv-opt" id="ph-cam">📷 Take a photo</button><button class="mv-opt" id="ph-gal">🖼 Choose from gallery</button><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button></div>`);
+  mvOpen(`<div class="mv-title">Add items from a photo</div><div class="mv-sub" style="margin-bottom:12px;line-height:1.5;">Photograph the open box from above, with items spread out and good light. Please photograph items only, not people.</div><div class="mv-sub" style="margin-bottom:12px;line-height:1.5;font-size:12px;">Photos are sent to a third-party AI service (Google Gemini) to read the items.</div><button class="mv-opt" id="ph-cam">📷 Take a photo</button><button class="mv-opt" id="ph-gal">🖼 Choose from gallery</button><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button></div>`);
   document.getElementById('ph-cam').onclick=()=>document.getElementById('photo-cam').click();
   document.getElementById('ph-gal').onclick=()=>document.getElementById('photo-gal').click();
 }
@@ -3148,7 +3148,7 @@ function showPhotoReview(d){
   if(!_phItems.length){photoRetry('No items found','Try a clearer photo from above, with the items spread out.');return;}
   const numStyle='width:64px;padding:8px;border:1.5px solid var(--border2);border-radius:10px;font-family:var(--font);background:var(--surface);color:var(--text);';
   const rows=_phItems.map((it,n)=>`<div class="mv-rec"><input type="checkbox" id="ph-on-${n}" checked style="width:20px;height:20px;flex:none;"/><input class="search-inp" id="ph-name-${n}" value="${esc(it.name)}" style="flex:1;min-width:0;"/><input type="number" id="ph-qty-${n}" min="1" value="${it.qty}" style="${numStyle}"/></div>`).join('');
-  mvOpen(`<div class="mv-title">Is this right?</div>${d.demo?'<div class="mv-sub" style="margin-bottom:8px;background:#FFF8E1;color:#8D6E00;padding:8px 10px;border-radius:10px;">Demo mode: these are sample items, not from your photo.</div>':''}<div class="mv-sub" style="margin-bottom:8px;line-height:1.5;">Untick anything wrong and fix names or quantities. Photos can miss items hidden under others.</div>${rows}${(db.bags.find(b=>b.id===curBag)||{}).refPath?'<div class="mv-sub" style="margin-top:10px;">This bag already has a reference photo. Ticking below replaces it.</div>':''}<label class="mv-sub" style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;line-height:1.4;"><input type="checkbox" id="ph-keep" style="width:18px;height:18px;flex:none;margin-top:1px;"/><span>Also save this photo as the reference photo for this bag (photograph items only, not people)</span></label><div class="mv-sub" style="margin-top:8px;">Scans left this month: ${d.remaining!=null?d.remaining:'—'}</div><div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button><button class="mv-yes" id="ph-add">Add selected</button></div>`);
+  mvOpen(`<div class="mv-title">Is this right?</div>${d.demo?'<div class="mv-sub" style="margin-bottom:8px;background:#FFF8E1;color:#8D6E00;padding:8px 10px;border-radius:10px;">Demo mode: these are sample items, not from your photo.</div>':''}<div class="mv-sub" style="margin-bottom:8px;line-height:1.5;">Untick anything wrong and fix names or quantities. Photos can miss items hidden under others.</div>${rows}${(db.bags.find(b=>b.id===curBag)||{}).refPath?'<div class="mv-sub" style="margin-top:10px;">This bag already has a reference photo. Ticking below replaces it.</div>':''}<label class="mv-sub" style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;line-height:1.4;"><input type="checkbox" id="ph-keep" style="width:18px;height:18px;flex:none;margin-top:1px;"/><span>Also save this photo as the reference photo for this bag (photograph items only, not people)</span></label>${(currentUser&&currentUser.email&&currentUser.email.toLowerCase()===ADMIN_EMAIL.toLowerCase())?`<div class="mv-sub" style="margin-top:8px;">Scans left this month: ${d.remaining!=null?d.remaining:'—'}</div>`:''}<div class="mv-row"><button class="mv-no" onclick="mvClose()">Cancel</button><button class="mv-yes" id="ph-add">Add selected</button></div>`);
   document.getElementById('ph-add').onclick=addPhotoItems;
 }
 async function addPhotoItems(){
